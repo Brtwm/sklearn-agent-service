@@ -30,5 +30,11 @@ class Settings(BaseSettings):
     embedding_dim: int = 384
     normalize_embeddings: bool = True
 
+    # Agent
+    max_iterations: int = 5
+    agent_temperature: float = 0.0
+    enable_web_search: bool = True
+    agent_max_output_chars: int = 2000
+
 
 settings = Settings()
