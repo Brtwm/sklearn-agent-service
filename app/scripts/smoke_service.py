@@ -355,7 +355,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=REPORT_PATH)
     parser.add_argument("--corpus", type=Path, default=Path("data/corpus_chunks.jsonl"))
     parser.add_argument("--questions", type=Path, default=Path("data/eval/retrieval_questions_v1.json"))
-    parser.add_argument("--qdrant-container", default="qdrant", help="Docker container for a separate memory snapshot")
+    parser.add_argument("--qdrant-container", default="sklearn-agent-service-qdrant-1", help="Docker container for a separate memory snapshot")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--address-file", type=Path, help=argparse.SUPPRESS)
     parser.add_argument("--corpus-sha256", help=argparse.SUPPRESS)
