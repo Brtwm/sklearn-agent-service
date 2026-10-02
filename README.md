@@ -60,9 +60,11 @@ docker compose run --rm app sh -c "python -m app.scripts.load_corpus && python -
 docker compose up -d app
 ```
 
-Compose задаёт приложению `QDRANT_URL=http://qdrant:6333`. Индекс сохраняется в `qdrant_data_v2/` на хосте. JSONL создаётся внутри временного контейнера и исчезает после индексации; работающему приложению нужен индекс Qdrant. Для переиндексации повторите `docker compose run`. Для CLI оценки используйте Anaconda: локальные JSONL, вопросы и отчёты не входят в образ приложения.
+Compose использует имя проекта `sklearn-agent-service` и создаёт имена контейнеров и сети автоматически, независимо от имени папки репозитория. Compose задаёт приложению `QDRANT_URL=http://qdrant:6333`. Индекс сохраняется в `qdrant_data_v2/` на хосте; другой путь можно задать через `QDRANT_STORAGE_PATH` в `.env`. JSONL создаётся внутри временного контейнера и исчезает после индексации; работающему приложению нужен индекс Qdrant. Для переиндексации повторите `docker compose run`. Для CLI оценки используйте Anaconda: локальные JSONL, вопросы и отчёты не входят в образ приложения.
 
 Остановка: `docker compose stop`. Каталог `qdrant_data_v2/` хранит рабочий индекс; старый `qdrant_data/` сохраняется отдельно.
+
+Локальный образ приложения — `agent-app:latest`, контейнеры — `sklearn-agent-service-app-1` и `sklearn-agent-service-qdrant-1`, сеть — `sklearn-agent-service_agent-net`. Старые контейнеры RAG не входят в этот Compose-проект. Workflow Deploy использует отдельный образ `sklearn-agent-service` в GHCR и каталог `/opt/mentoring/agent-service` на сервере; перед его запуском каталог нужно подготовить с актуальным Compose-файлом.
 
 ## Готовность и API
 
