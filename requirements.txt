@@ -39,7 +39,6 @@ lxml>=5.0.0
 
 # RAG Evaluation
 
-ragas==0.2.15
 datasets>=3.0.0
 
 
