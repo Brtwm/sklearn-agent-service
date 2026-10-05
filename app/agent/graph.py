@@ -1,7 +1,7 @@
-from dill import check
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import AnyMessage, SystemMessage
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
@@ -39,11 +39,22 @@ def agent_node(state: AgentState) -> dict:
 tool_executor_node = ToolNode(TOOLS)
 
 
+def should_continue(state: AgentState) -> str:
+    if state["iteration_count"] >= settings.max_iterations:
+        return END
+    last_msg = state["messages"][-1]
+    if getattr(last_msg, "tool_calls", None):
+        return "tool_executor"
+    return END
+
+
 def build_agent_graph(checkpointer=None):
+    if checkpointer is None:
+        checkpointer = MemorySaver()
     graph = StateGraph(AgentState)
     graph.add_node("agent", agent_node)
     graph.add_node("tool_executor", tool_executor_node)
     graph.set_entry_point("agent")
+    graph.add_conditional_edges("agent", should_continue)
     graph.add_edge("tool_executor", "agent")
-    graph.add_edge("agent", END)
     return graph.compile(checkpointer=checkpointer)
