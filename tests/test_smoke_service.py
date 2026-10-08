@@ -108,15 +108,16 @@ def test_ui_observations_reject_overlapping_generation():
 def test_ui_check_reads_button_updates_and_checks_restored_controls(controls_enabled):
     history = [{"role": "assistant", "content": [{"type": "text", "text": response_body()["answer"]}]}]
     panel = "**[1]** [Ridge](<https://example.org/ridge#regression>)"
-    completed = (history, {"interactive": False}, "Завершено", panel, {"interactive": False})
-    restored = ({"__type__": "update"}, {"interactive": controls_enabled}, {}, {},
-                {"interactive": controls_enabled})
+    completed = (history, {"interactive": False}, "Завершено", panel, "Trace", "Готово",
+                 {"interactive": False}, {"interactive": False})
+    restored = ({"__type__": "update"}, {"interactive": controls_enabled}, {}, {}, {}, {},
+                {"interactive": controls_enabled}, {"interactive": controls_enabled})
 
     def client_factory(*args, **kwargs):
         # The installed client drops Button outputs by default. Mirror that boundary.
         outputs = [completed, restored]
         if kwargs.get("_skip_components", True):
-            outputs = [event[:4] for event in outputs]
+            outputs = [event[:6] + event[7:] for event in outputs]
         job = SimpleNamespace(result=lambda **kw: outputs[-1], outputs=lambda: outputs)
         return SimpleNamespace(submit=lambda *a, **kw: job, close=lambda: None)
 

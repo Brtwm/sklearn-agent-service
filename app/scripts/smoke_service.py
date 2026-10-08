@@ -252,7 +252,8 @@ def check_ui(url: str, questions: list[dict], corpus: dict, reference: dict | No
                 if "Завершено" not in last[2]:
                     raise ValueError("UI did not reach the completed state")
                 final = job.outputs()[-1]
-                if not final[1].get("interactive") or not final[4].get("interactive"):
+                # Gradio client omits State, so Button/Radio are outputs 6/7.
+                if not all(final[index].get("interactive") for index in (1, 6, 7)):
                     raise ValueError("UI controls were not restored")
                 row["success"] = True
             except Exception as exc:

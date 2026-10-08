@@ -1,4 +1,5 @@
 import re
+import json
 import logging
 import uuid
 import time
@@ -9,8 +10,12 @@ from urllib.parse import quote, urlsplit
 
 import gradio as gr
 from fastapi import FastAPI, HTTPException
+from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph.message import add_messages
+from starlette.datastructures import MutableHeaders
+from starlette.types import ASGIApp, Scope, Receive, Send
 
 from app.config import settings
 from app.rag.chain import build_rag_chain, format_docs_with_sources, index_available
@@ -140,7 +145,31 @@ def _extract_sources(messages: list) -> list[AgentSource]:
     return sources
 
 
+class DisableProxyBufferingMiddleware:
+    """Set queue response headers without collecting or buffering the body."""
+
+    SSE_PATHS = ("/gradio_api/queue/data", "/gradio_api/queue/join", "/queue/data", "/queue/join")
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] != "http" or not scope["path"].startswith(self.SSE_PATHS):
+            await self.app(scope, receive, send)
+            return
+
+        async def send_unbuffered(message):
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers["X-Accel-Buffering"] = "no"
+                headers["Cache-Control"] = "no-cache"
+            await send(message)
+
+        await self.app(scope, receive, send_unbuffered)
+
+
 app = FastAPI(title="RAG service", lifespan=lifespan)
+app.add_middleware(DisableProxyBufferingMiddleware)
 
 @app.get("/health")
 def health() -> dict[str, str]:
@@ -368,37 +397,190 @@ def respond(message: str, history: list):
         )
 
 
-def _respond_ui(message: str, history: list):
+def _format_agent_trace(messages: list) -> str:
+    steps, _ = _extract_trace(messages)
+    if not steps:
+        return "_Без вызовов инструментов._"
+    lines = []
+    for step in steps:
+        timing = f"{step.latency_ms} мс" if step.latency_ms is not None else "время не измерено"
+        args = _escape_markdown(json.dumps(step.input, ensure_ascii=False))
+        output = _escape_markdown(step.output.strip()).replace("\n", "\n> ")
+        lines.append(
+            f"**{step.step}. {_escape_markdown(step.tool or 'tool')}** · {timing}\n\n"
+            f"**Параметры:** {args}\n\n**Результат:**\n\n> {output}"
+        )
+    return "\n\n---\n\n".join(lines)
+
+
+def _agent_sources_panel(messages: list) -> str:
+    sources = _extract_sources(messages)
+    if not sources:
+        return "### 📚 Источники\n\n_Источников пока нет._"
+    return _format_sources([Document(
+        page_content=source.full_context or source.snippet, metadata={"source": source.url},
+    ) for source in sources])
+
+
+def respond_agent(message: str, history: list, thread_id_state: str):
+    """Stream the current graph run; the last AIMessage supplies the final answer."""
+    empty_sources = "### 📚 Источники\n\n_—_"
+    empty_trace = "_Без вызовов инструментов._"
+    if not message or not message.strip():
+        yield history, "", _format_timings("Пустой запрос"), empty_sources, empty_trace, "💤 Готов к работе", thread_id_state
+        return
+    try:
+        check_input(message)
+    except GuardrailError as exc:
+        history = history + [{"role": "user", "content": message},
+                             {"role": "assistant", "content": f"⚠️ Запрос отклонён: {exc}"}]
+        yield history, "", _format_timings("Запрос отклонён"), empty_sources, empty_trace, "🛡 Запрос отклонён", thread_id_state
+        return
+
+    history = history + [{"role": "user", "content": message}, {"role": "assistant", "content": ""}]
+    thread_id = thread_id_state or str(uuid.uuid4())
+    started = time.perf_counter()
+    yield history, "", _format_timings("Старт агента…"), empty_sources, empty_trace, "🤔 Агент выбирает инструмент…", thread_id
+
+    final_messages = []
+    iterations = 0
+    termination_reason = None
+    accumulated = ""
+    generation = None
+    try:
+        if _agent_graph is None:
+            raise RuntimeError("Agent graph unavailable")
+        for stream_mode, payload in _agent_graph.stream(
+            {"messages": [HumanMessage(content=message, id=str(uuid.uuid4()))], "iteration_count": 0},
+            config={"configurable": {"thread_id": thread_id},
+                    "recursion_limit": 2 * settings.max_iterations + 2},
+            stream_mode=["updates", "messages"],
+        ):
+            if stream_mode == "messages":
+                chunk, metadata = payload
+                if metadata.get("langgraph_node") != "agent":
+                    continue
+                current_generation = (metadata.get("langgraph_step"), chunk.id)
+                if current_generation != generation:
+                    generation, accumulated = current_generation, ""
+                if getattr(chunk, "tool_call_chunks", None):
+                    continue
+                text = _message_text(chunk.content)
+                if not text:
+                    continue
+                accumulated += text
+                history = history[:-1] + [{"role": "assistant", "content": accumulated}]
+                status = f"✍️ Агент пишет ответ… {len(accumulated)} симв."
+            else:
+                node, update = next(iter(payload.items()))
+                node_messages = update.get("messages", []) or []
+                final_messages = add_messages(final_messages, node_messages)
+                if node == "agent":
+                    iterations = update.get("iteration_count", iterations + 1)
+                    termination_reason = update.get("termination_reason")
+                    calls = [call for msg in node_messages if isinstance(msg, AIMessage)
+                             for call in msg.tool_calls]
+                    if termination_reason:
+                        status = "⚠️ Достигнут лимит итераций"
+                    elif calls:
+                        accumulated = ""
+                        history = history[:-1] + [{"role": "assistant", "content": ""}]
+                        labels = {"documentation_search": "📚 Поиск документации",
+                                  "python_repl": "🧮 Расчёт Python", "web_search": "🌐 Веб-поиск"}
+                        status = " · ".join(labels.get(call["name"], call["name"]) for call in calls)
+                    else:
+                        status = "✍️ Проверяю итоговый ответ…"
+                else:
+                    names = ", ".join(msg.name or "tool" for msg in node_messages if isinstance(msg, ToolMessage))
+                    status = f"🔍 Анализирую результаты: {names}"
+            yield (history, "", _format_timings("Агент работает…", total_ms=(time.perf_counter() - started) * 1000),
+                   _agent_sources_panel(final_messages), _format_agent_trace(final_messages), status, thread_id)
+
+        final = final_messages[-1] if final_messages else None
+        if not isinstance(final, AIMessage) or final.tool_calls or not _message_text(final.content).strip():
+            raise RuntimeError("Agent did not produce a final answer")
+        steps, tools_used = _extract_trace(final_messages)
+        answer, guardrail = check_output(_message_text(final.content), tools_used)
+        history = history[:-1] + [{"role": "assistant", "content": answer}]
+        total_ms = (time.perf_counter() - started) * 1000
+        if termination_reason == "iteration_limit":
+            status = "⚠️ Достигнут лимит итераций — задача не завершена"
+        elif guardrail:
+            status = f"🛡 Ответ изменён проверкой: {guardrail}"
+        else:
+            status = f"✅ Готово за {total_ms / 1000:.1f} сек · {len(steps)} запросов к инструментам · {iterations} итераций"
+        phase = "Задача не завершена" if termination_reason else "Ответ проверен" if guardrail else "Агент завершил работу"
+        timings = (_format_timings(phase, total_ms=total_ms)
+                   + f"\n- 🔄 **Итераций:** {iterations}\n- 🛠 **Запросов к инструментам:** {len(steps)}")
+        yield history, "", timings, _agent_sources_panel(final_messages), _format_agent_trace(final_messages), status, thread_id
+    except Exception as exc:
+        logger.warning("Agent UI execution failed (%s)", type(exc).__name__)
+        _, tools_used = _extract_trace(final_messages)
+        partial, _ = check_output(accumulated, tools_used)
+        error = f"⚠️ Ответ не завершён: агент сейчас недоступен ({type(exc).__name__}). Попробуй ещё раз."
+        history = history[:-1] + [{"role": "assistant", "content": f"{partial}\n\n{error}" if partial else error}]
+        yield (history, "", _format_timings("Ошибка агента", total_ms=(time.perf_counter() - started) * 1000),
+               _agent_sources_panel(final_messages), _format_agent_trace(final_messages), "⚠️ Ошибка агента — ответ не завершён", thread_id)
+
+
+def _route_respond(message, history, mode, thread_id_state):
+    if mode == "Агент (/agent)":
+        yield from respond_agent(message, history, thread_id_state)
+    else:
+        for out in respond(message, history):
+            phase = next((line.strip("*") for line in out[2].splitlines() if line.startswith("**")), "Обработка запроса…")
+            icon = "✅" if phase == "Завершено" else "⚠️" if phase.startswith("Ошибка") else "⏳"
+            yield (*out, "_Быстрый режим: шаги агента не используются._", f"{icon} {phase}", thread_id_state)
+
+
+def _clear_ui():
+    return ([], "", _format_timings("Новый диалог"), "### 📚 Источники\n\n_—_",
+            "_Шаги появятся после запроса к агенту._", "💤 Готов к работе", "")
+
+
+def _respond_ui(message: str, history: list, mode: str = "Быстрый (/chat)", thread_id_state: str = ""):
     """Keep controls disabled throughout streaming, including handled failures."""
     try:
-        for chat_history, value, timings, sources in respond(message, history):
-            yield chat_history, gr.update(value=value, interactive=False), timings, sources, gr.update(interactive=False)
+        for chat_history, value, timings, sources, trace, status, thread_id in _route_respond(message, history, mode, thread_id_state):
+            yield (chat_history, gr.update(value=value, interactive=False), timings, sources, trace, status,
+                   thread_id, gr.update(interactive=False), gr.update(interactive=False))
     except Exception:
         yield gr.skip(), gr.update(interactive=False), _format_timings(
             "Ошибка обработки запроса. Попробуй ещё раз.",
-        ), gr.skip(), gr.update(interactive=False)
-    yield gr.skip(), gr.update(interactive=True), gr.skip(), gr.skip(), gr.update(interactive=True)
+        ), gr.skip(), gr.skip(), "⚠️ Ошибка обработки запроса", gr.skip(), gr.update(interactive=False), gr.update(interactive=False)
+    yield (gr.skip(), gr.update(interactive=True), gr.skip(), gr.skip(), gr.skip(), gr.skip(),
+           gr.skip(), gr.update(interactive=True), gr.update(interactive=True))
 
 
 CSS = """
 .gradio-container { max-width: 100% !important; padding: 1rem !important; }
-#chatbot { height: calc(100vh - 220px) !important; min-height: 500px !important; }
-#side-panel { height: calc(100vh - 220px) !important; overflow-y: auto !important;
-              padding: 1rem !important; border-left: 1px solid #ddd !important; }
+#chatbot { height: calc(100vh - 270px) !important; min-height: 460px !important; }
+#status-line { padding: .7rem 1rem; border: 1px solid var(--border-color-primary);
+               border-radius: 12px; background: var(--background-fill-secondary); }
+#side-panel { max-height: calc(100vh - 190px); overflow-y: auto; flex-wrap: nowrap;
+              padding: 1rem; border: 1px solid var(--border-color-primary); border-radius: 12px; }
+#side-panel > * { flex-shrink: 0; }
+@media (max-width: 900px) {
+    #chatbot { height: 55vh !important; min-height: 320px !important; }
+    #side-panel { max-height: none; }
+}
 """
 
 with gr.Blocks(
-    title="scikit-learn docs RAG",
+    title="scikit-learn docs RAG & agent",
     fill_height=True,
 ) as demo:
     gr.Markdown(
-        "# 📖 scikit-learn docs RAG assistant\n"
+        "# 📖 scikit-learn · ML assistant\n"
         "_Спрашивай про модели, оценку, подготовку данных и подбор параметров — на русском или английском._"
     )
+    thread_id_state = gr.State("")
+    status_line = gr.Markdown("💤 Готов к работе", elem_id="status-line")
     with gr.Row():
         with gr.Column(scale=3):
             chatbot = gr.Chatbot(
                 elem_id="chatbot",
+                show_label=False,
                 latex_delimiters=LATEX_DELIMITERS,
                 buttons=["copy"],
                 avatar_images=(None, None),
@@ -408,10 +590,12 @@ with gr.Blocks(
                     placeholder="Например: «Покажи формулу Ridge» или «Чем precision отличается от recall»",
                     scale=8,
                     container=False,
+                    show_label=False,
                     autofocus=True,
                 )
                 send = gr.Button("Отправить", scale=1, variant="primary")
             gr.Examples(
+                label="Примеры вопросов",
                 examples=[
                     "How does Ridge regression work?",
                     "Что ты умеешь?",
@@ -420,22 +604,33 @@ with gr.Blocks(
                 ],
                 inputs=msg,
             )
-            with gr.Column(scale=1, elem_id="side-panel"):
-                timings_md = gr.Markdown(
-                    "### ⏱ Тайминги последнего запроса\n\n_Задайте вопрос, чтобы увидеть тайминги._"
-                )
-                sources_md = gr.Markdown("### 📚 Источники\n\n_—_")
+        with gr.Column(scale=1, min_width=300, elem_id="side-panel"):
+            mode_radio = gr.Radio(
+                choices=["Быстрый (/chat)", "Агент (/agent)"], value="Быстрый (/chat)", label="Режим",
+            )
+            gr.Markdown("**Быстрый** — ответ по документации.\n\n**Агент** — документация, расчёты, веб-поиск и память диалога.")
+            timings_md = gr.Markdown(
+                "### ⏱ Тайминги последнего запроса\n\n_Задайте вопрос, чтобы увидеть тайминги._"
+            )
+            sources_md = gr.Markdown("### 📚 Источники\n\n_—_")
+            with gr.Accordion("Что сделал агент", open=False):
+                trace_md = gr.Markdown("_Включите режим «Агент», чтобы увидеть шаги._")
 
     gr.on(
         triggers=[msg.submit, send.click],
         fn=_respond_ui,
-        inputs=[msg, chatbot],
-        outputs=[chatbot, msg, timings_md, sources_md, send],
+        inputs=[msg, chatbot, mode_radio, thread_id_state],
+        outputs=[chatbot, msg, timings_md, sources_md, trace_md, status_line, thread_id_state, send, mode_radio],
         trigger_mode="once",
         concurrency_limit=1,
         concurrency_id="chat",
         show_progress="minimal",
         api_name="respond",
+    )
+    chatbot.clear(
+        fn=_clear_ui,
+        outputs=[chatbot, msg, timings_md, sources_md, trace_md, status_line, thread_id_state],
+        concurrency_limit=1, concurrency_id="chat", api_name=False,
     )
 
 demo.queue(max_size=8, default_concurrency_limit=1)
