@@ -43,7 +43,8 @@ def test_agent_ui_streams_current_answer_and_parallel_tool_results(monkeypatch):
     assert events[-1][0][-1]["content"] == "The result is 42."
     assert any(event[0][-1]["content"] == "42" for event in events)
     assert all("Private RAG summary" not in event[0][-1]["content"] for event in events)
-    assert "documentation_search" in events[-1][4] and "python_repl" in events[-1][4]
+    trace = events[-1][4].replace("\\_", "_")
+    assert "documentation_search" in trace and "python_repl" in trace
     assert "12 мс" in events[-1][4] and "42" in events[-1][4]
     assert "https://example.org/ridge" in events[-1][3]
     assert "Original passage" in events[-1][3]
@@ -105,7 +106,7 @@ def test_agent_ui_reports_provider_failure_and_preserves_trace(monkeypatch):
     events = list(service._respond_ui("Calculate 6 * 7", [], "Агент (/agent)", "existing"))
     failure = events[-2]
     assert "Ошибка" in failure[5]
-    assert "python_repl" in failure[4]
+    assert "python_repl" in failure[4].replace("\\_", "_")
     assert "private provider details" not in str(events)
     assert events[-1][1]["interactive"] is True
     assert events[-1][7]["interactive"] is True
@@ -128,8 +129,24 @@ def test_sse_headers_cover_actual_gradio_queue_routes_only():
         "app.main.build_rag_chain", return_value=(MagicMock(), MagicMock())
     ):
         with TestClient(service.app) as client:
-            missing_session = client.get("/gradio_api/queue/data", params={"session_hash": "missing"})
+            missing_session = client.get("/gradio_api/queue/data")
             unrelated = client.get("/health")
     assert missing_session.headers.get("x-accel-buffering") == "no"
     assert missing_session.headers.get("cache-control") == "no-cache"
     assert "x-accel-buffering" not in unrelated.headers
+
+
+def test_clear_chat_starts_a_new_agent_thread(monkeypatch):
+    clear_event = next(event for event in service.demo.config["dependencies"]
+                       if event["backend_fn"] and any(target[0] == service.chatbot._id and target[1] == "clear"
+                                                       for target in event["targets"]))
+    cleared = service.demo.fns[clear_event["id"]].fn()
+    graph = MagicMock()
+    graph.stream.return_value = iter([("updates", {"agent": {
+        "messages": [AIMessage(content="New conversation")], "iteration_count": 1,
+    }})])
+    monkeypatch.setattr(service, "_agent_graph", graph)
+    final = list(service.respond_agent("Hello", cleared[0], cleared[6]))[-1]
+    assert UUID(final[6]).version == 4
+    assert final[0] == [{"role": "user", "content": "Hello"},
+                        {"role": "assistant", "content": "New conversation"}]

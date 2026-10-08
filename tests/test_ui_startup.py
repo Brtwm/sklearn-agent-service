@@ -46,7 +46,9 @@ def test_ui_restores_controls_after_request(failure) -> None:
             ready.side_effect = RuntimeError()
         events = list(service._respond_ui("Ridge?", []))
     assert events[0][1]["interactive"] is False
-    assert events[0][4]["interactive"] is False
+    assert events[0][7]["interactive"] is False
+    assert events[0][8]["interactive"] is False
     assert events[-1][1]["interactive"] is True
-    assert events[-1][4]["interactive"] is True
+    assert events[-1][7]["interactive"] is True
+    assert events[-1][8]["interactive"] is True
     assert all(event[1].get("interactive") is False for event in events[:-1])
