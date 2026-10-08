@@ -1,5 +1,8 @@
+import time
+from threading import Lock
+
 from langchain_core.tools import tool
-from langchain_community.tools import DuckDuckGoSearchRun
+from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_experimental.tools.python.tool import PythonREPLTool
 
 from app.rag.chain import build_rag_chain, format_docs_with_sources
@@ -8,17 +11,26 @@ from app.config import settings
 _chain = None
 _retriever = None
 _python_repl = PythonREPLTool()
-_ddg_search = DuckDuckGoSearchRun()
+_ddg_search = DuckDuckGoSearchResults(num_results=3, output_format="json")
+_rag_lock = Lock()
+
+
+def set_rag_resources(chain, retriever) -> None:
+    """Share the service's initialized RAG instead of loading a second embedder."""
+    global _chain, _retriever
+    with _rag_lock:
+        _chain, _retriever = chain, retriever
 
 
 def _ensure_rag_ready():
     global _chain, _retriever
-    if _chain is None:
-        _chain, _retriever = build_rag_chain()
-    
+    with _rag_lock:
+        if _chain is None or _retriever is None:
+            _chain, _retriever = build_rag_chain()
 
-@tool
-def documentation_search(query: str) -> str:
+
+@tool(response_format="content_and_artifact")
+def documentation_search(query: str) -> tuple[str, dict]:
     """Search the indexed scikit-learn documentation and return an answer with sources.
 
     Use for questions about linear models, decision trees, ensembles,
@@ -35,23 +47,33 @@ def documentation_search(query: str) -> str:
     Returns:
         An answer grounded in retrieved documentation, followed by source URLs.
     """
+    started = time.perf_counter()
     _ensure_rag_ready()
-    docs = _retriever.invoke(query)
-    answer = _chain.invoke({
+    retriever, chain = _retriever, _chain
+    docs = retriever.invoke(query)
+    answer = chain.invoke({
         "question": query,
         "context": format_docs_with_sources(docs)
     })
     sources = [doc.metadata.get("source", "unknown") for doc in docs]
     sources_block = "\n".join(f"- {url}" for url in sources)
-    return f"{answer}\n\nSources:\n{sources_block}"
+    return f"{answer}\n\nSources:\n{sources_block}", {
+        "latency_ms": int((time.perf_counter() - started) * 1000),
+        "sources": [{
+            "url": doc.metadata.get("source", "unknown"),
+            "snippet": doc.page_content[:200].strip(),
+            "full_context": doc.page_content,
+        } for doc in docs],
+    }
 
 
-@tool
-def python_repl(code: str) -> str:
+@tool(response_format="content_and_artifact")
+def python_repl(code: str) -> tuple[str, dict]:
     """Execute Python code and return the printed output.
 
     Use this tool for arithmetic, computing formulas, or transforming data.
-    The code runs in a sandboxed REPL; use `print()` to surface results.
+    The REPL runs in the service process, without a security sandbox.
+    Use `print()` to surface results.
 
     Args:
         code: Python source code to execute.
@@ -59,15 +81,17 @@ def python_repl(code: str) -> str:
     Returns:
         Stdout of the executed code, or error message.
     """
-    return _python_repl.run(code)
+    started = time.perf_counter()
+    output = _python_repl.run(code)
+    return output, {"latency_ms": int((time.perf_counter() - started) * 1000)}
 
 
 # SECURITY NOTE: PythonREPLTool executes arbitrary code in the same process
-# as our app. It is NEVER exposed directly to end users — only the agent
-# decides what to send into it. For production with untrusted users, wrap
+# as our app. Agent-mediated invocation does not provide isolation.
+# For production with untrusted users, wrap
 # in a sandbox (gvisor, firecracker, e2b.dev).
-@tool
-def web_search(query: str) -> str:
+@tool(response_format="content_and_artifact")
+def web_search(query: str) -> tuple[str, dict]:
     """Search the web via DuckDuckGo for recent or general-knowledge info.
 
     Use this tool when the question requires fresh data (release notes,
@@ -77,11 +101,12 @@ def web_search(query: str) -> str:
         query: free-text search query.
 
     Returns:
-        Top-3 search results as title + snippet text.
+        Up to three search results with titles, snippets and source URLs.
     """
-    if not settings.enable_web_search:
-        return "Web search is disabled in this environment"
-    return _ddg_search.run(query)
+    started = time.perf_counter()
+    output = (_ddg_search.run(query) if settings.enable_web_search
+              else "Web search is disabled in this environment")
+    return output, {"latency_ms": int((time.perf_counter() - started) * 1000)}
 
 
 TOOLS = [documentation_search, python_repl, web_search]
