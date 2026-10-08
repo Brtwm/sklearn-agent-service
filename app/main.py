@@ -1,4 +1,6 @@
 import re
+import logging
+import uuid
 import time
 from contextlib import asynccontextmanager
 from html import escape
@@ -7,13 +9,24 @@ from urllib.parse import quote, urlsplit
 
 import gradio as gr
 from fastapi import FastAPI, HTTPException
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langgraph.checkpoint.memory import MemorySaver
 
+from app.config import settings
 from app.rag.chain import build_rag_chain, format_docs_with_sources, index_available
 from app.schemas.chat import ChatRequest, ChatResponse, Source
+from app.agent.graph import build_agent_graph
+from app.agent.guardrails import GuardrailError, check_input, check_output
+from app.agent.tools import set_rag_resources
+from app.schemas.agent import AgentRequest, AgentResponse, Source as AgentSource, TraceStep
+
 
 _chain = None
 _retriever = None
 _rag_lock = Lock()
+_agent_graph = None
+_agent_checkpointer = None
+logger = logging.getLogger(__name__)
 
 # LaTeX delimiters для Gradio Chatbot. LLM-ответы про Ridge, Lasso, метрики
 # содержат формулы $$..$$ / \[..\] / $..$ — без этого блока они отрисуются
@@ -27,11 +40,21 @@ LATEX_DELIMITERS = [
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _chain, _retriever
+    global _chain, _retriever, _agent_graph, _agent_checkpointer
     _ensure_ready()
-    yield
-    _chain = None
-    _retriever = None
+    _agent_checkpointer = MemorySaver()
+    _agent_graph = build_agent_graph(checkpointer=_agent_checkpointer)
+    logger.info("Agent graph initialized; RAG ready: %s", _chain is not None)
+    try:
+        yield
+    finally:
+        if _retriever is not None:
+            _retriever.client.close()
+        _chain = None
+        _retriever = None
+        set_rag_resources(None, None)
+        _agent_graph = None
+        _agent_checkpointer = None
 
 
 def _ensure_ready() -> bool:
@@ -41,14 +64,80 @@ def _ensure_ready() -> bool:
             if not index_available():
                 _chain = None
                 _retriever = None
+                set_rag_resources(None, None)
                 return False
             if _chain is None or _retriever is None:
                 _chain, _retriever = build_rag_chain()
+                set_rag_resources(_chain, _retriever)
             return True
-        except Exception:
+        except Exception as exc:
+            logger.warning("RAG initialization unavailable (%s)", type(exc).__name__)
             _chain = None
             _retriever = None
+            set_rag_resources(None, None)
             return False
+
+
+def _message_text(content: str | list) -> str:
+    if isinstance(content, str):
+        return content
+    return "".join(
+        part if isinstance(part, str) else part.get("text", "")
+        for part in content
+        if isinstance(part, str) or isinstance(part, dict) and part.get("type") == "text"
+    )
+
+
+def _extract_trace(messages: list, sources: list | None = None) -> tuple[list[TraceStep], list[str]]:
+    steps: list[TraceStep] = []
+    tools_used: list[str] = []
+    by_call_id: dict[str, TraceStep] = {}
+    for msg in messages:
+        if isinstance(msg, AIMessage) and getattr(msg, "tool_calls", None):
+            for tc in msg.tool_calls:
+                step = TraceStep(
+                    step=len(steps) + 1,
+                    node="agent",
+                    tool=tc["name"],
+                    input=tc.get("args", {}),
+                    output="(tool requested)",
+                )
+                steps.append(step)
+                by_call_id[tc["id"]] = step
+        elif isinstance(msg, ToolMessage):
+            step = by_call_id.get(msg.tool_call_id)
+            if step is not None:
+                step.output = _message_text(msg.content)[:500]
+                artifact = msg.artifact if isinstance(msg.artifact, dict) else {}
+                step.latency_ms = artifact.get("latency_ms")
+                if msg.status != "error" and not (
+                    step.tool == "documentation_search" and "sources" in artifact
+                    and not artifact["sources"]
+                ):
+                    tools_used.append(step.tool)
+    return steps, tools_used
+
+
+def _extract_sources(messages: list) -> list[AgentSource]:
+    sources: list[AgentSource] = []
+    search_ids = {tc["id"] for msg in messages if isinstance(msg, AIMessage)
+                  for tc in msg.tool_calls if tc["name"] == "documentation_search"}
+    for msg in messages:
+        if not isinstance(msg, ToolMessage) or msg.status == "error":
+            continue
+        if msg.name != "documentation_search" and msg.tool_call_id not in search_ids:
+            continue
+        artifact = msg.artifact if isinstance(msg.artifact, dict) else {}
+        if "sources" in artifact:
+            sources.extend(AgentSource(**source) for source in artifact["sources"])
+            continue
+        body, separator, sources_block = _message_text(msg.content).partition("Sources:")
+        if separator:
+            for line in sources_block.strip().splitlines():
+                url = line.strip().removeprefix("- ").strip()
+                if urlsplit(url).scheme in ("http", "https", "local"):
+                    sources.append(AgentSource(url=url, snippet=body.strip()[:200]))
+    return sources
 
 
 app = FastAPI(title="RAG service", lifespan=lifespan)
@@ -96,6 +185,54 @@ def chat(payload: ChatRequest) -> ChatResponse:
         for doc in docs
     ]
     return ChatResponse(answer=answer, sources=sources)
+
+
+@app.post("/agent", response_model=AgentResponse)
+def agent_chat(payload: AgentRequest) -> AgentResponse:
+    try:
+        check_input(payload.question)
+    except GuardrailError as e:
+        raise HTTPException(status_code=422, detail=f"Input rejected: {e}") from e
+
+    if _agent_graph is None:
+        raise HTTPException(status_code=503, detail="Agent graph unavailable")
+    thread_id = payload.thread_id or str(uuid.uuid4())
+    question_message = HumanMessage(content=payload.question, id=str(uuid.uuid4()))
+    t0 = time.perf_counter()
+    try:
+        result = _agent_graph.invoke(
+            {"messages": [question_message], "iteration_count": 0},
+            config={"configurable": {"thread_id": thread_id},
+                    "recursion_limit": 2 * settings.max_iterations + 2},
+        )
+    except Exception as exc:
+        logger.warning("Agent execution failed (%s)", type(exc).__name__)
+        raise HTTPException(
+            status_code=503, detail=f"Agent temporarily unavailable. Raw: {type(exc).__name__}",
+        ) from exc
+    total_ms = int((time.perf_counter() - t0) * 1000)
+
+    messages = result["messages"]
+    current_start = next(i for i, msg in enumerate(messages) if msg.id == question_message.id)
+    current_messages = messages[current_start + 1:]
+    final = current_messages[-1] if current_messages else None
+    if not isinstance(final, AIMessage) or final.tool_calls or not _message_text(final.content).strip():
+        raise HTTPException(status_code=503, detail="Agent did not produce a final answer")
+    raw_answer = _message_text(final.content)
+    trace_steps, tools_used = _extract_trace(current_messages)
+
+    safe_answer, guardrail_reason = check_output(raw_answer, tools_used)
+
+    return AgentResponse(
+        answer=safe_answer,
+        trace=trace_steps,
+        sources=_extract_sources(current_messages),
+        guardrail_triggered=guardrail_reason,
+        iterations=result.get("iteration_count", 0),
+        thread_id=thread_id,
+        total_ms=total_ms,
+        termination_reason=result.get("termination_reason"),
+    )
 
 
 def _format_timings(
