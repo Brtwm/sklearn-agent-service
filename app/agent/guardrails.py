@@ -15,11 +15,14 @@ _ALLOWED_CHARS = re.compile(
 )
 
 _DECLARATIVE_MARKERS = (
-    "according to",
-    "as stated",
+    "according to the documentation",
+    "according to the docs",
+    "as stated in the documentation",
+    "as stated in the docs",
     "the documentation says",
-    "согласно",
-    "по документации",
+    "согласно документации",
+    "как указано в документации",
+    "в документации сказано",
 )
 
 class GuardrailError(ValueError):
