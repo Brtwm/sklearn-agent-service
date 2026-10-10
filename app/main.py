@@ -24,7 +24,9 @@ from app.agent.graph import build_agent_graph
 from app.agent.guardrails import GuardrailError, check_input, check_output
 from app.agent.tools import set_rag_resources
 from app.schemas.agent import AgentRequest, AgentResponse, Source as AgentSource, TraceStep
+from app.core.logging import configure_agent_logging
 
+configure_agent_logging()
 
 _chain = None
 _retriever = None
