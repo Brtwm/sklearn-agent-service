@@ -16,6 +16,7 @@ class Source(BaseModel):
     """One retrieved chunk that supported the answer"""
     url: str
     snippet: str = Field(..., description="First ~200 chars of the chunk")
+    full_context: str = Field(..., description="Full text of the chunk")
 
 
 class ChatResponse(BaseModel):

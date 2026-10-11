@@ -212,6 +212,7 @@ def chat(payload: ChatRequest) -> ChatResponse:
         Source(
             url=doc.metadata.get("source", "unknown"),
             snippet=doc.page_content[:200].strip(),
+            full_context=doc.page_content,
         )
         for doc in docs
     ]

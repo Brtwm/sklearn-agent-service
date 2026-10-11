@@ -152,10 +152,15 @@ def test_four_citations_follow_rest_source_order(mock_rag_chain) -> None:
     assert response.json() == {
         "answer": "See [1] and [4].",
         "sources": [
-            {"url": f"https://example.org/{number}", "snippet": f"Passage {number}"}
+            {
+                "url": f"https://example.org/{number}",
+                "snippet": f"Passage {number}",
+                "full_context": f"Passage {number}",
+            }
             for number in range(1, 5)
         ],
     }
+
     context = mock_chain.invoke.call_args.args[0]["context"]
     assert context.split("\n\n---\n\n") == [
         f"[{number}] Source: https://example.org/{number}\nPassage {number}"
@@ -364,3 +369,32 @@ def test_index_availability_checks_active_collection() -> None:
     client_class.return_value.collection_exists.assert_called_once_with("active_test_collection")
     verify.assert_called_once_with(client_class.return_value, "active_test_collection")
     client_class.return_value.close.assert_called_once_with()
+
+
+def test_chat_returns_full_context_without_truncation(mock_rag_chain) -> None:
+    mock_chain, mock_retriever = mock_rag_chain
+    full_context = (
+        "Ridge documentation" * 20
+        + "Important fact near the end: alpha controls regularization."
+    )
+
+    mock_retriever.invoke.return_value = [
+        Document(
+            page_content=full_context,
+            metadata={"source": "https://example.org/ridge"}
+        )
+    ]
+    mock_chain.invoke.return_value = "Alpha controls regularization [1]."
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/chat",
+            json={"question": "What does alpha control in Ridge?"},
+        )
+
+    assert response.status_code == 200
+
+    source = response.json()["sources"][0]
+    assert source["snippet"] == full_context[:200].strip()
+    assert source["full_context"] == full_context
+    assert "Important fact near the end" in source["full_context"]
