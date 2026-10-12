@@ -1,0 +1,62 @@
+{
+  "baseline:mh-01": {
+    "answer_correct": false,
+    "numerical_correct": false,
+    "tool_chain_valid": null,
+    "notes": "Source 3 supports alpha * ||w||^2. Displayed code would return 7 but claimed output is 3.5. Baseline has no Python execution."
+  },
+  "agent:mh-01": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": true,
+    "notes": "Source 1 supports the Ridge objective. Documentation precedes Python; alpha=0.5, w=[1,2,3] yield 7.0. Final calculation agrees. No final source citation."
+  },
+  "baseline:mh-02": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": null,
+    "notes": "Source 2 supports TP/(TP+FP); 8/(8+2)=0.8. Formula and result pass. Displayed Python output is generated text, not execution evidence."
+  },
+  "agent:mh-02": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": true,
+    "notes": "Retrieved binary-classification context supports TP/(TP+FP). Python uses TP=8, FP=2 and returns 0.8. Final interpretation is correct. Formula and citation omitted from final answer."
+  },
+  "baseline:mh-03": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": null,
+    "notes": "Source 1 includes tp/(tp+fn) in code. Formula and rounded 2/3 result pass. Opening statement about absence of an explicit formula is imprecise but immediately qualified with code evidence. Python execution is not verified."
+  },
+  "agent:mh-03": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": true,
+    "notes": "Retrieved context supports TP/(TP+FN). Python uses TP=8,FN=4 and returns 0.6666666666666666. Final 0.667 / 66.7% is acceptable rounding. No final citation."
+  },
+  "baseline:mh-04": {
+    "answer_correct": false,
+    "numerical_correct": false,
+    "tool_chain_valid": null,
+    "notes": "Retrieved F-beta formula with beta=1 supports the displayed formula. Code would return 24/35=0.6857142857 but claimed output is 0.6888888889. Python execution is not verified."
+  },
+  "agent:mh-04": {
+    "answer_correct": false,
+    "numerical_correct": true,
+    "tool_chain_valid": true,
+    "notes": "Retrieved F-beta formula with beta=1 supports calculation. Python uses P=0.8,R=0.6 and returns 0.6857142857142857; 0.686 is valid rounding. Extra general claim comparing high precision/low recall with moderate balanced values fails: P=0.99,R=0.4 gives about 0.5698 > F1(0.5,0.5)=0.5. Numerical result and tool chain pass, entire explanation fails. Final formula and citation omitted."
+  },
+  "baseline:mh-05": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": null,
+    "notes": "Source 1 supports MSE. Squared errors [0,0,4] yield 4/3, matching the answer. Proposed sklearn code is not actually executed by baseline."
+  },
+  "agent:mh-05": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": true,
+    "notes": "Mean-squared-error source supports formula. Python evaluates requested arrays with sklearn and verifies errors [0,0,4] manually; both results are 4/3. Final 1.333 is acceptable rounding. No final citation."
+  }
+}
