@@ -1,0 +1,125 @@
+{
+  "run_name": "noreason-v2",
+  "n_documentation_questions": 9,
+  "paired_ids": [
+    "sh-01",
+    "sh-02",
+    "sh-03",
+    "sh-04",
+    "sh-05",
+    "sh-06",
+    "sh-07",
+    "sh-08",
+    "sh-09"
+  ],
+  "coverage": [
+    {
+      "question_id": "sh-01",
+      "system": "baseline",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-01",
+      "system": "agent",
+      "has_full_context": true,
+      "guardrail": "output_too_long"
+    },
+    {
+      "question_id": "sh-02",
+      "system": "baseline",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-02",
+      "system": "agent",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-03",
+      "system": "baseline",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-03",
+      "system": "agent",
+      "has_full_context": true,
+      "guardrail": "output_too_long"
+    },
+    {
+      "question_id": "sh-04",
+      "system": "baseline",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-04",
+      "system": "agent",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-05",
+      "system": "baseline",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-05",
+      "system": "agent",
+      "has_full_context": true,
+      "guardrail": "output_too_long"
+    },
+    {
+      "question_id": "sh-06",
+      "system": "baseline",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-06",
+      "system": "agent",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-07",
+      "system": "baseline",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-07",
+      "system": "agent",
+      "has_full_context": true,
+      "guardrail": "output_too_long"
+    },
+    {
+      "question_id": "sh-08",
+      "system": "baseline",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-08",
+      "system": "agent",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-09",
+      "system": "baseline",
+      "has_full_context": true,
+      "guardrail": null
+    },
+    {
+      "question_id": "sh-09",
+      "system": "agent",
+      "has_full_context": true,
+      "guardrail": "output_too_long"
+    }
+  ]
+}
