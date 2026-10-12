@@ -1,4 +1,5 @@
 from typing import Annotated, NotRequired, TypedDict
+import re
 import time
 import structlog
 
@@ -14,6 +15,29 @@ from app.config import settings
 from app.llm import get_llm
 
 log = structlog.get_logger(__name__)
+
+# Enforce retrieval for explicit corpus topics; the prompt still handles
+# implicit follow-ups and topics not recognized by this small routing rule.
+_INDEXED_TOPIC = re.compile(
+    r"\b(?:scikit-learn|sklearn|ridge\w*|lasso\w*|elasticnet|"
+    r"logisticregression|decision\s+trees?|decisiontree\w*|"
+    r"randomforest\w*|random\s+forests?|gradientboost\w*|ensembles?|"
+    r"precision|recall|f[12](?:[-_ ](?:score|мера))?|mse|rmse|"
+    r"regularization|l[12][-_ ](?:penalty|regularization)|"
+    r"cross[- ]validation|preprocessing|pipelines?|columntransformer|"
+    r"featureunion|gridsearch\w*|randomizedsearch\w*|"
+    r"hyperparameters?|imputation|feature\s+selection)\b|"
+    r"регуляризац\w*|дерев\w*\s+решени\w*|ансамбл\w*|"
+    r"кросс[- ]валидац\w*|предобработ\w*|пайплайн\w*|"
+    r"подбор\w*\s+параметр\w*|обработ\w*\s+пропуск\w*|"
+    r"отбор\w*\s+признак\w*",
+    re.IGNORECASE,
+)
+_EXPLICIT_WEB_SEARCH = re.compile(
+    r"\bweb_search\b|\bsearch\s+(?:the\s+)?web\b|"
+    r"в\s+интернете|веб[- ]поиск",
+    re.IGNORECASE,
+)
 
 class AgentState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
@@ -37,8 +61,33 @@ def agent_node(state: AgentState) -> dict:
 
     messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
 
+    question = next(
+        (message.content for message in reversed(state["messages"])
+         if isinstance(message, HumanMessage)),
+        "",
+    )
+    require_documentation = (
+        iteration == 1
+        and isinstance(question, str)
+        and bool(_INDEXED_TOPIC.search(question))
+        and not _EXPLICIT_WEB_SEARCH.search(question)
+    )
+    invoke_options = {}
+    if require_documentation:
+        invoke_options = {
+            "tool_choice": {
+                "type": "function", "function": {"name": "documentation_search"},
+            },
+            "parallel_tool_calls": False,
+        }
+
     try:
-        response = _get_llm_with_tools().invoke(messages)
+        response = _get_llm_with_tools().invoke(messages, **invoke_options)
+        if require_documentation and (
+            len(response.tool_calls or []) != 1
+            or response.tool_calls[0]["name"] != "documentation_search"
+        ):
+            raise RuntimeError("Provider ignored required documentation_search")
     except Exception as exc:
         log.error(
             "agent_node_failed",
