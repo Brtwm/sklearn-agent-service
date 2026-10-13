@@ -1,0 +1,6 @@
+# Install into sklearn-agent after the project's requirements.txt.
+# RAGAS 0.2.15 imports the legacy Vertex AI integration removed in
+# langchain-community 0.4.2; experimental 0.4.2 requires that newer release.
+ragas==0.2.15
+langchain-community==0.4.1
+langchain-experimental==0.4.0

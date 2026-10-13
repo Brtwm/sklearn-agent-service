@@ -8,10 +8,10 @@ from app.config import Settings
 from app import llm as provider
 
 
-def test_neuraldeep_settings_are_forwarded_to_chat_api():
-    settings = Settings(_env_file=None, llm_api_key="test-only",
-                        llm_base_url="https://api.neuraldeep.ru/v1",
-                        llm_model="qwen3.6-35b-a3b-noreason")
+def test_default_provider_settings_are_forwarded_to_chat_api(monkeypatch):
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    settings = Settings(_env_file=None, llm_api_key="test-only")
     requests = []
 
     def handler(request):

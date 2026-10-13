@@ -16,7 +16,8 @@ CORPUS = {("https://example.org/ridge#regression", "Ridge uses L2."): "chunk-1"}
 
 def response_body(question="Ridge?", context=CONTEXT):
     return {"answer": json.dumps({"question": question, "context": context}), "sources": [
-        {"url": "https://example.org/ridge#regression", "snippet": "Ridge uses L2."},
+        {"url": "https://example.org/ridge#regression", "snippet": "Ridge uses L2.",
+         "full_context": "Ridge uses L2."},
     ]}
 
 
@@ -34,12 +35,13 @@ def test_validation_rejects_another_requests_valid_corpus_context():
     corpus = {**CORPUS, ("https://example.org/lasso", "Lasso uses L1."): "chunk-2"}
     body = {"answer": json.dumps({"question": "Ridge?",
                                   "context": "[1] Source: https://example.org/lasso\nLasso uses L1."}),
-            "sources": [{"url": "https://example.org/lasso", "snippet": "Lasso uses L1."}]}
+            "sources": [{"url": "https://example.org/lasso", "snippet": "Lasso uses L1.",
+                         "full_context": "Lasso uses L1."}]}
     with pytest.raises(ValueError, match="serial reference"):
         smoke.validate_response(body, QUESTION, corpus, expected_ids=["chunk-1"])
 
 
-@pytest.mark.parametrize("change", ["question", "sources", "context", "duplicate"])
+@pytest.mark.parametrize("change", ["question", "sources", "context", "duplicate", "full_context", "missing_context"])
 def test_validate_response_rejects_mixing_or_invalid_sources(change):
     body = response_body()
     if change == "question":
@@ -48,6 +50,10 @@ def test_validate_response_rejects_mixing_or_invalid_sources(change):
         body["sources"][0]["url"] = "https://example.org/other"
     elif change == "context":
         body["answer"] = json.dumps({"question": "Ridge?", "context": CONTEXT + " invented"})
+    elif change == "full_context":
+        body["sources"][0]["full_context"] += " invented"
+    elif change == "missing_context":
+        del body["sources"][0]["full_context"]
     else:
         body["answer"] = json.dumps({"question": "Ridge?", "context": CONTEXT + "\n\n---\n\n" + CONTEXT})
         body["sources"] *= 2
@@ -109,9 +115,9 @@ def test_ui_check_reads_button_updates_and_checks_restored_controls(controls_ena
     history = [{"role": "assistant", "content": [{"type": "text", "text": response_body()["answer"]}]}]
     panel = "**[1]** [Ridge](<https://example.org/ridge#regression>)"
     completed = (history, {"interactive": False}, "Завершено", panel, "Trace", "Готово",
-                 {"interactive": False}, {"interactive": False})
+                 None, {"interactive": False}, {"interactive": False})
     restored = ({"__type__": "update"}, {"interactive": controls_enabled}, {}, {}, {}, {},
-                {"interactive": controls_enabled}, {"interactive": controls_enabled})
+                None, {"interactive": controls_enabled}, {"interactive": controls_enabled})
 
     def client_factory(*args, **kwargs):
         # The installed client drops Button outputs by default. Mirror that boundary.
@@ -119,7 +125,10 @@ def test_ui_check_reads_button_updates_and_checks_restored_controls(controls_ena
         if kwargs.get("_skip_components", True):
             outputs = [event[:6] + event[7:] for event in outputs]
         job = SimpleNamespace(result=lambda **kw: outputs[-1], outputs=lambda: outputs)
-        return SimpleNamespace(submit=lambda *a, **kw: job, close=lambda: None)
+        def submit(message, history, mode, thread_id, **kwargs):
+            assert mode == "Быстрый (/chat)" and thread_id == ""
+            return job
+        return SimpleNamespace(submit=submit, close=lambda: None)
 
     with patch("gradio_client.Client", side_effect=client_factory):
         result = smoke.check_ui("http://test", [QUESTION], CORPUS)

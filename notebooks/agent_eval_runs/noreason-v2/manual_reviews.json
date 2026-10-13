@@ -1,0 +1,62 @@
+{
+  "baseline:mh-01": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": null,
+    "notes": "Source 3 supports the Ridge penalty alpha * ||w||^2. Formula and final result 7.0 are correct. Displayed Python output is generated text, not evidence of execution; baseline has no Python tool."
+  },
+  "agent:mh-01": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": true,
+    "notes": "Source 1 supports the Ridge penalty. Documentation precedes Python; alpha=0.5 and w=[1,2,3] yield 7.0, matching the final answer. The extra intercept-exclusion claim is correct for Ridge but is not explicitly established by the retrieved chunks; this is a grounding weakness for later RAGAS review. Final citation omitted."
+  },
+  "baseline:mh-02": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": null,
+    "notes": "Source 2 supports TP/(TP+FP); 8/(8+2)=0.8. Formula and number pass. Wording suggests Python computation, but baseline does not execute Python."
+  },
+  "agent:mh-02": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": true,
+    "notes": "Source 3 contains the binary precision formula. Python uses TP=8 and FP=2, prints Precision = 0.8, and final interpretation is correct. Final formula and citation omitted; the formula was found in the trace, satisfying the existing rubric."
+  },
+  "baseline:mh-03": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": null,
+    "notes": "Source 1 contains tp/(tp+fn) in the multi-label confusion-matrix code example. Formula and rounded 2/3 result pass. The opening qualification about absence of a prose formula is imprecise but immediately supplies code evidence. Claimed Python execution is not verified."
+  },
+  "agent:mh-03": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": true,
+    "notes": "Source 1 supports TP/(TP+FN). Documentation precedes Python; TP=8 and FN=4 return 0.6666666666666666. Final 0.667 / 66.7% is acceptable rounding. Final formula and citation omitted."
+  },
+  "baseline:mh-04": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": null,
+    "notes": "Source 2 supports F-beta, and beta=1 gives the displayed F1 formula. Computation 24/35=0.6857142857142857 and rounded 0.686 are correct. The claimed Python execution is generated wording, not actual tool execution."
+  },
+  "agent:mh-04": {
+    "answer_correct": false,
+    "numerical_correct": true,
+    "tool_chain_valid": true,
+    "notes": "Source 4 supports the F-beta formula with beta=1. Python uses precision=0.8 and recall=0.6 and returns 0.6857142857142857; final 0.686 is valid rounding. However, the answer explicitly says F1 is lower than both individual values in this case. This is false: 0.6 < 24/35 < 0.8. Correct execution and number do not make the entire explanation correct. Final source URLs are present."
+  },
+  "baseline:mh-05": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": null,
+    "notes": "Source 1 supports MSE. Squared errors [0,0,4] yield 4/3, matching the final 1.3333. Proposed sklearn code is not executed by baseline."
+  },
+  "agent:mh-05": {
+    "answer_correct": true,
+    "numerical_correct": true,
+    "tool_chain_valid": true,
+    "notes": "Source 1 supports MSE. Python uses the requested arrays, calculates squared errors [0,0,4], and returns 1.3333333333333333. Final formula, table and rounded result are correct. The answer is in Russian despite an English question: an instruction-following weakness noted separately from mathematical correctness under the existing rubric. Final source citation omitted."
+  }
+}

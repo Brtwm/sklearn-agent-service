@@ -1,4 +1,7 @@
 from typing import Annotated, NotRequired, TypedDict
+import re
+import time
+import structlog
 
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage
 from langgraph.checkpoint.memory import MemorySaver
@@ -11,6 +14,30 @@ from app.agent.tools import TOOLS
 from app.config import settings
 from app.llm import get_llm
 
+log = structlog.get_logger(__name__)
+
+# Enforce retrieval for explicit corpus topics; the prompt still handles
+# implicit follow-ups and topics not recognized by this small routing rule.
+_INDEXED_TOPIC = re.compile(
+    r"\b(?:scikit-learn|sklearn|ridge\w*|lasso\w*|elasticnet|"
+    r"logisticregression|decision\s+trees?|decisiontree\w*|"
+    r"randomforest\w*|random\s+forests?|gradientboost\w*|ensembles?|"
+    r"precision|recall|f[12](?:[-_ ](?:score|мера))?|mse|rmse|"
+    r"regularization|l[12][-_ ](?:penalty|regularization)|"
+    r"cross[- ]validation|preprocessing|pipelines?|columntransformer|"
+    r"featureunion|gridsearch\w*|randomizedsearch\w*|"
+    r"hyperparameters?|imputation|feature\s+selection)\b|"
+    r"регуляризац\w*|дерев\w*\s+решени\w*|ансамбл\w*|"
+    r"кросс[- ]валидац\w*|предобработ\w*|пайплайн\w*|"
+    r"подбор\w*\s+параметр\w*|обработ\w*\s+пропуск\w*|"
+    r"отбор\w*\s+признак\w*",
+    re.IGNORECASE,
+)
+_EXPLICIT_WEB_SEARCH = re.compile(
+    r"\bweb_search\b|\bsearch\s+(?:the\s+)?web\b|"
+    r"в\s+интернете|веб[- ]поиск",
+    re.IGNORECASE,
+)
 
 class AgentState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
@@ -29,30 +56,103 @@ def _get_llm_with_tools():
 
 
 def agent_node(state: AgentState) -> dict:
+    iteration = state["iteration_count"] + 1
+    started = time.perf_counter()
+
     messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
-    response = _get_llm_with_tools().invoke(messages)
-    iterations = state["iteration_count"] + 1
+
+    question = next(
+        (message.content for message in reversed(state["messages"])
+         if isinstance(message, HumanMessage)),
+        "",
+    )
+    require_documentation = (
+        iteration == 1
+        and isinstance(question, str)
+        and bool(_INDEXED_TOPIC.search(question))
+        and not _EXPLICIT_WEB_SEARCH.search(question)
+    )
+    invoke_options = {}
+    if require_documentation:
+        invoke_options = {
+            "tool_choice": {
+                "type": "function", "function": {"name": "documentation_search"},
+            },
+            "parallel_tool_calls": False,
+        }
+
+    try:
+        response = _get_llm_with_tools().invoke(messages, **invoke_options)
+        if require_documentation and (
+            len(response.tool_calls or []) != 1
+            or response.tool_calls[0]["name"] != "documentation_search"
+        ):
+            raise RuntimeError("Provider ignored required documentation_search")
+    except Exception as exc:
+        log.error(
+            "agent_node_failed",
+            iteration=iteration,
+            latency_ms=int((time.perf_counter() - started) * 1000),
+            error_type=type(exc).__name__,
+        )
+        raise
+
+    latency_ms = int((time.perf_counter() - started) * 1000)
+    tool_calls = response.tool_calls or []
     updates = [response]
     termination_reason = None
-    if iterations >= settings.max_iterations and response.tool_calls:
-        # Resolve every pending call so the checkpoint can continue next turn.
-        updates.extend(ToolMessage(
-            content="Not executed: agent iteration limit reached.",
-            tool_call_id=call["id"], name=call["name"], status="error",
-        ) for call in response.tool_calls)
-        question = next((m.content for m in reversed(state["messages"])
-                         if isinstance(m, HumanMessage)), "")
-        russian = isinstance(question, str) and any("А" <= c <= "я" or c in "Ёё" for c in question)
-        updates.append(AIMessage(content=(
-            "Достигнут лимит итераций агента. Задача не завершена; попробуйте разбить вопрос на части."
-            if russian else
-            "Agent iteration limit reached. The task is incomplete; try splitting the question into smaller parts."
-        )))
+    if iteration >= settings.max_iterations and tool_calls:
+        # Resolve pending calls so the checkpoint can continue next turn.
+        updates.extend(
+            ToolMessage(
+                content="Not executed: agent iteration limit reached",
+                tool_call_id=call["id"],
+                name=call["name"],
+                status="error",
+            )
+            for call in tool_calls
+        )
+
+        question = next(
+            (
+                message.content
+                for message in reversed(state["messages"])
+                if isinstance(message, HumanMessage)
+            ),
+            "",
+        )
+        russian = isinstance(question, str) and any(
+            "А" <= character <= "я" or character in "Ёё"
+            for character in question
+        )
+
+        updates.append(
+            AIMessage(
+                content=(
+                    "Достигнут лимит итераций агента. Задача не завершена; "
+                    "попробуйте разбить вопрос на части."
+                    if russian
+                    else
+                    "Agent iteration limit reached. The task is incomplete; "
+                    "try splitting the question into smaller parts."
+                )
+            )
+        )
         termination_reason = "iteration_limit"
+
+    log.info(
+        "agent_node_completed",
+        iteration=iteration,
+        latency_ms=latency_ms,
+        tool_calls_count=len(tool_calls),
+        tools_requested=[call["name"] for call in tool_calls],
+        termination_reason=termination_reason,
+    )
+
     return {
         "messages": updates,
-        "iteration_count": iterations,
-        "termination_reason": termination_reason,
+        "iteration_count": iteration,
+        "termination_reason": termination_reason
     }
 
 

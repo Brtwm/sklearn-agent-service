@@ -1,9 +1,64 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from app.agent.graph import build_agent_graph
 from app.config import settings
+
+
+@pytest.mark.parametrize("question", [
+    "What is the difference between Lasso and Ridge?",
+    "When is recall more important than precision?",
+    "Что такое L2-регуляризация?",
+    "Что такое F1-мера?",
+])
+@patch("app.agent.graph._get_llm_with_tools")
+def test_indexed_question_requires_documentation_on_first_iteration(mock_factory, question):
+    from app.agent.graph import agent_node
+
+    llm = mock_factory.return_value
+    llm.invoke.return_value = AIMessage(content="", tool_calls=[{
+        "name": "documentation_search", "args": {"query": question}, "id": "required-doc",
+    }])
+    agent_node({"messages": [HumanMessage(content=question)], "iteration_count": 0})
+    assert llm.invoke.call_args.kwargs["tool_choice"] == {
+        "type": "function", "function": {"name": "documentation_search"},
+    }
+
+
+@pytest.mark.parametrize("question", [
+    "Compute 7 * 6 with python_repl.", "Что ты умеешь?", "Привет!",
+    "Search the web for the latest Ridge changes.",
+])
+@patch("app.agent.graph._get_llm_with_tools")
+def test_non_documentation_requests_keep_automatic_tool_choice(mock_factory, question):
+    from app.agent.graph import agent_node
+
+    mock_factory.return_value.invoke.return_value = AIMessage(content="Answer")
+    agent_node({"messages": [HumanMessage(content=question)], "iteration_count": 0})
+    assert "tool_choice" not in mock_factory.return_value.invoke.call_args.kwargs
+
+
+@patch("app.agent.graph._get_llm_with_tools")
+def test_documentation_choice_is_released_after_first_iteration(mock_factory):
+    from app.agent.graph import agent_node
+
+    mock_factory.return_value.invoke.return_value = AIMessage(content="Ridge answer")
+    agent_node({"messages": [HumanMessage(content="Explain Ridge"),
+                             ToolMessage(content="Ridge evidence", name="documentation_search",
+                                         tool_call_id="doc")], "iteration_count": 1})
+    assert "tool_choice" not in mock_factory.return_value.invoke.call_args.kwargs
+
+
+@patch("app.agent.graph._get_llm_with_tools")
+def test_provider_cannot_silently_ignore_required_documentation(mock_factory):
+    from app.agent.graph import agent_node
+
+    mock_factory.return_value.invoke.return_value = AIMessage(content="An unsupported Ridge answer")
+    with pytest.raises(RuntimeError, match="required documentation_search"):
+        agent_node({"messages": [HumanMessage(content="Explain Ridge")], "iteration_count": 0})
 
 @patch("app.agent.graph._get_llm_with_tools")
 def test_graph_terminates_after_max_iterations(mock_llm_factory):

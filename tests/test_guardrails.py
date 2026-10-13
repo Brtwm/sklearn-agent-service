@@ -133,3 +133,22 @@ def test_output_guardrail_truncates_long_claim_with_source(monkeypatch):
     assert safe.startswith("According to the documentation, ")
     assert safe.endswith("\n...(truncated)")
     assert len(safe) == 200
+
+
+@pytest.mark.parametrize("answer", [
+    "Могу отвечать на вопросы по документации scikit-learn.",
+    "Могу искать документацию и выполнять вычисления через Python.",
+])
+def test_output_guardrail_allows_capability_description(answer):
+    safe, reason = check_output(answer, [])
+
+    assert safe == answer
+    assert reason is None
+
+
+def test_output_guardrail_blocks_russian_source_claim_without_search():
+    answer = "Согласно документации, Ridge использует L2-регуляризацию."
+
+    _, reason = check_output(answer, [])
+
+    assert reason == "declarative_without_source"

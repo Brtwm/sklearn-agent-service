@@ -52,7 +52,7 @@ def validate_response(body: dict, question: dict, corpus: dict, expected_ids: li
         if chunk_id is None:
             raise ValueError("Context differs from the corpus")
         ids.append(chunk_id)
-        sources.append({"url": url, "snippet": content[:200].strip()})
+        sources.append({"url": url, "snippet": content[:200].strip(), "full_context": content})
     if not 1 <= len(ids) <= 4 or len(ids) != len(set(ids)) or sources != body["sources"]:
         raise ValueError("Response sources differ from generation context or contain duplicates")
     if expected_ids is not None and ids != expected_ids:
@@ -130,13 +130,13 @@ def serve_worker(args) -> None:
         import app.main as service
         original = service._respond_ui
 
-        def observed_ui(message, history):
+        def observed_ui(message, history, mode="Быстрый (/chat)", thread_id_state=""):
             with lock:
                 observations["active"] += 1
                 observations["started"] += 1
                 observations["peak_active"] = max(observations["peak_active"], observations["active"])
             try:
-                yield from original(message, history)
+                yield from original(message, history, mode, thread_id_state)
             finally:
                 with lock:
                     observations["active"] -= 1
@@ -223,7 +223,7 @@ def check_ui(url: str, questions: list[dict], corpus: dict, reference: dict | No
     sessions = [Client(url, verbose=False, httpx_kwargs={"trust_env": False},
                        _skip_components=False, analytics_enabled=False) for _ in questions]
     try:
-        jobs = [session.submit(question["question"], [], api_name="/respond")
+        jobs = [session.submit(question["question"], [], "Быстрый (/chat)", "", api_name="/respond")
                 for session, question in zip(sessions, questions, strict=True)]
         rows = []
         for question, job in zip(questions, jobs, strict=True):
@@ -240,7 +240,8 @@ def check_ui(url: str, questions: list[dict], corpus: dict, reference: dict | No
                 sources = []
                 for passage in passages:
                     heading, _, text = passage.partition("\n")
-                    sources.append({"url": heading.split("Source: ", 1)[1], "snippet": text[:200].strip()})
+                    sources.append({"url": heading.split("Source: ", 1)[1], "snippet": text[:200].strip(),
+                                    "full_context": text})
                 row["chunk_ids"] = validate_response({"answer": content, "sources": sources}, question, corpus,
                                                     (reference or {}).get(question["id"]))
                 headers = re.findall(r"\*\*\[(\d+)\]\*\* (.+)", last[3])
@@ -252,8 +253,8 @@ def check_ui(url: str, questions: list[dict], corpus: dict, reference: dict | No
                 if "Завершено" not in last[2]:
                     raise ValueError("UI did not reach the completed state")
                 final = job.outputs()[-1]
-                # Gradio client omits State, so Button/Radio are outputs 6/7.
-                if not all(final[index].get("interactive") for index in (1, 6, 7)):
+                # Retaining component updates also retains the State placeholder.
+                if not all(final[index].get("interactive") for index in (1, 7, 8)):
                     raise ValueError("UI controls were not restored")
                 row["success"] = True
             except Exception as exc:
