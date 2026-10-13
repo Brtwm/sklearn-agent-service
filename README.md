@@ -231,7 +231,3 @@ python -m app.scripts.eval_ragas --input notebooks/answer_evaluation_repeat.json
 Для GitHub Actions потребуются GHCR_TOKEN, SERVER_HOST, SERVER_USER и SSH_PRIVATE_KEY. LLM-ключ хранится в серверном .env. Сервис публикуется на 127.0.0.1:8000; proxy/TLS и доступ извне проверяются отдельно. Python-исполнение необходимо изолировать либо отключить перед публичным доступом — подробности в заметках об агенте.
 
 Очистка docker image prune -f в workflow удаляет только dangling-образы. Она не удаляет тома или сохранённые SHA-теги и не заменяет контроль свободного места. Серверный smoke-тест и готовность /ready будут проверены при будущем деплое, а не считаются выполненными сейчас.
-
-## Коротко для резюме
-
-Разработал двуязычный RAG-сервис и LangGraph-агента по scikit-learn: FastAPI, Gradio streaming, гибридный E5/BM25-поиск в Qdrant, RRF/MiniLM reranking, Python-расчёты, память диалога, trace и структурированные логи. Проверил локальный Docker, API и тесты; сравнил baseline и агента через RAGAS и ручную multi-hop оценку с сохранением ответов и ограничений результатов.
