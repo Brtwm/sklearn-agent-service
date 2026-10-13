@@ -1,0 +1,37 @@
+{
+  "run_name": "noreason-v2",
+  "ragas_complete": true,
+  "ragas": {
+    "faithfulness": {
+      "n_paired": 9,
+      "n_expected": 9,
+      "baseline": 0.925925925925926,
+      "agent": 0.46950391950391945
+    },
+    "answer_relevancy": {
+      "n_paired": 9,
+      "n_expected": 9,
+      "baseline": 0.9399933274121024,
+      "agent": 0.9424133766538341
+    }
+  },
+  "multi_hop": {
+    "n_questions": 5,
+    "baseline_numerical_accuracy": 1.0,
+    "agent_numerical_accuracy": 1.0,
+    "baseline_answer_accuracy": 1.0,
+    "agent_answer_accuracy": 0.8,
+    "agent_tool_chain_valid_rate": 1.0,
+    "agent_task_success_rate": 0.8
+  },
+  "input_sha256": "1da237bc6f4a313cb906a1d896dc4961ecb9fde23ec80376cd976d7993026887",
+  "judge_model": "qwen3.6-35b-a3b-noreason",
+  "evaluation_versions": {
+    "ragas": "0.2.15",
+    "langchain-community": "0.4.1",
+    "langchain-experimental": "0.4.0",
+    "langchain-core": "1.6.6",
+    "langchain-openai": "1.6.7",
+    "sentence-transformers": "6.1.0"
+  }
+}

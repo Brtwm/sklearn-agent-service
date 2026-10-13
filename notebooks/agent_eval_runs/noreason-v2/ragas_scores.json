@@ -1,0 +1,182 @@
+[
+  {
+    "system": "baseline",
+    "question_id": "sh-01",
+    "faithfulness": 1.0,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9901146076,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_baseline_batch-1-retry-1-sh-01.json",
+    "answer_relevancy_source_report": "ragas_baseline_batch-1.json"
+  },
+  {
+    "system": "baseline",
+    "question_id": "sh-02",
+    "faithfulness": 1.0,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9111380159,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_baseline_batch-1.json",
+    "answer_relevancy_source_report": "ragas_baseline_batch-1.json"
+  },
+  {
+    "system": "baseline",
+    "question_id": "sh-03",
+    "faithfulness": 0.6666666667,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9636064933,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_baseline_batch-1.json",
+    "answer_relevancy_source_report": "ragas_baseline_batch-1.json"
+  },
+  {
+    "system": "baseline",
+    "question_id": "sh-04",
+    "faithfulness": 1.0,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9683722011,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_baseline_batch-2.json",
+    "answer_relevancy_source_report": "ragas_baseline_batch-2.json"
+  },
+  {
+    "system": "baseline",
+    "question_id": "sh-05",
+    "faithfulness": 1.0,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9911637182,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_baseline_batch-2.json",
+    "answer_relevancy_source_report": "ragas_baseline_batch-2.json"
+  },
+  {
+    "system": "baseline",
+    "question_id": "sh-06",
+    "faithfulness": 1.0,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9444132202,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_baseline_batch-2.json",
+    "answer_relevancy_source_report": "ragas_baseline_batch-2.json"
+  },
+  {
+    "system": "baseline",
+    "question_id": "sh-07",
+    "faithfulness": 1.0,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9726289798,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_baseline_batch-3.json",
+    "answer_relevancy_source_report": "ragas_baseline_batch-3.json"
+  },
+  {
+    "system": "baseline",
+    "question_id": "sh-08",
+    "faithfulness": 0.7777777778,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.8700953525,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_baseline_batch-3.json",
+    "answer_relevancy_source_report": "ragas_baseline_batch-3.json"
+  },
+  {
+    "system": "baseline",
+    "question_id": "sh-09",
+    "faithfulness": 0.8888888889,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.848407358,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_baseline_batch-3.json",
+    "answer_relevancy_source_report": "ragas_baseline_batch-3.json"
+  },
+  {
+    "system": "agent",
+    "question_id": "sh-01",
+    "faithfulness": 0.4054054054,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9901146076,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_agent_batch-1.json",
+    "answer_relevancy_source_report": "ragas_agent_batch-1.json"
+  },
+  {
+    "system": "agent",
+    "question_id": "sh-02",
+    "faithfulness": 0.2272727273,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9483700162,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_agent_batch-1.json",
+    "answer_relevancy_source_report": "ragas_agent_batch-1.json"
+  },
+  {
+    "system": "agent",
+    "question_id": "sh-03",
+    "faithfulness": 0.6333333333,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.965577423,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_agent_batch-1.json",
+    "answer_relevancy_source_report": "ragas_agent_batch-1.json"
+  },
+  {
+    "system": "agent",
+    "question_id": "sh-04",
+    "faithfulness": 1.0,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9874888668,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_agent_batch-2.json",
+    "answer_relevancy_source_report": "ragas_agent_batch-2.json"
+  },
+  {
+    "system": "agent",
+    "question_id": "sh-05",
+    "faithfulness": 0.5238095238,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9306529565,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_agent_batch-2.json",
+    "answer_relevancy_source_report": "ragas_agent_batch-2.json"
+  },
+  {
+    "system": "agent",
+    "question_id": "sh-06",
+    "faithfulness": 0.15,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9408367754,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_agent_batch-2.json",
+    "answer_relevancy_source_report": "ragas_agent_batch-2.json"
+  },
+  {
+    "system": "agent",
+    "question_id": "sh-07",
+    "faithfulness": 0.0357142857,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.9873004064,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_agent_batch-3.json",
+    "answer_relevancy_source_report": "ragas_agent_batch-3.json"
+  },
+  {
+    "system": "agent",
+    "question_id": "sh-08",
+    "faithfulness": 0.5,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.8829719799,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_agent_batch-3.json",
+    "answer_relevancy_source_report": "ragas_agent_batch-3.json"
+  },
+  {
+    "system": "agent",
+    "question_id": "sh-09",
+    "faithfulness": 0.75,
+    "faithfulness_status": "completed",
+    "answer_relevancy": 0.848407358,
+    "answer_relevancy_status": "completed",
+    "faithfulness_source_report": "ragas_agent_batch-3.json",
+    "answer_relevancy_source_report": "ragas_agent_batch-3.json"
+  }
+]

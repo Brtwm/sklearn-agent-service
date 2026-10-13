@@ -1,0 +1,362 @@
+{
+  "started_at_utc": "2026-10-13T15:28:36.096512+00:00",
+  "complete": true,
+  "stop_reason": null,
+  "call_budget": 9,
+  "calls_attempted": 9,
+  "interval_s": 20,
+  "parameters": {
+    "run_name": "noreason-v2",
+    "system": "baseline",
+    "question_ids": [
+      "sh-04",
+      "sh-05",
+      "sh-06"
+    ],
+    "provider_host": "api.neuraldeep.ru",
+    "judge_model": "qwen3.6-35b-a3b-noreason",
+    "temperature": 0,
+    "max_output_tokens": 4096,
+    "embedding_model": "intfloat/multilingual-e5-small",
+    "normalize_embeddings": true,
+    "strictness": 1,
+    "interval_s": 20,
+    "sdk_retries": 0,
+    "ragas_retries": 0,
+    "input_sha256": "1da237bc6f4a313cb906a1d896dc4961ecb9fde23ec80376cd976d7993026887",
+    "driver_sha256": "65b3a5e9d2758ad10a0fb0f54d9755ceab9909b919fd462b0036927c4c211768",
+    "versions": {
+      "ragas": "0.2.15",
+      "langchain-community": "0.4.1",
+      "langchain-experimental": "0.4.0",
+      "langchain-core": "1.6.6",
+      "langchain-openai": "1.6.7",
+      "sentence-transformers": "6.1.0"
+    },
+    "limitations": [
+      "Same model may generate and evaluate answers; shared bias is possible.",
+      "Faithfulness does not validate individual citations or factual correctness.",
+      "Nine documentation questions only; multi-hop is reviewed separately.",
+      "Truncated answers are evaluated as delivered."
+    ]
+  },
+  "calls": [
+    {
+      "number": 1,
+      "question_id": "sh-04",
+      "metric": "faithfulness",
+      "status": "completed",
+      "prompt": "Given a question and an answer, analyze the complexity of each sentence in the answer. Break down each sentence into one or more fully understandable statements. Ensure that no pronouns are used in any statement. Format the outputs in JSON.\nPlease return the output in a JSON format that complies with the following schema as specified in JSON Schema:\n{\"properties\": {\"statements\": {\"description\": \"The generated statements\", \"items\": {\"type\": \"string\"}, \"title\": \"Statements\", \"type\": \"array\"}}, \"required\": [\"statements\"], \"title\": \"StatementGeneratorOutput\", \"type\": \"object\"}Do not use single quotes in your response but double quotes,properly escaped with a backslash.\n\n--------EXAMPLES-----------\nExample 1\nInput: {\n    \"question\": \"Who was Albert Einstein and what is he best known for?\",\n    \"answer\": \"He was a German-born theoretical physicist, widely acknowledged to be one of the greatest and most influential physicists of all time. He was best known for developing the theory of relativity, he also made important contributions to the development of the theory of quantum mechanics.\"\n}\nOutput: {\n    \"statements\": [\n        \"Albert Einstein was a German-born theoretical physicist.\",\n        \"Albert Einstein is recognized as one of the greatest and most influential physicists of all time.\",\n        \"Albert Einstein was best known for developing the theory of relativity.\",\n        \"Albert Einstein also made important contributions to the development of the theory of quantum mechanics.\"\n    ]\n}\n-----------------------------\n\nNow perform the same with the following input\ninput: {\n    \"question\": \"What does min_samples_leaf control in a decision tree?\",\n    \"answer\": \"`min_samples_leaf` controls the minimum number of samples required to be at a leaf node [1]. It ensures that multiple samples inform every decision in the tree by controlling which splits will be considered [1]. Specifically, `min_samples_leaf` guarantees that each leaf has a minimum size, which helps avoid low-variance, over-fit leaf nodes in regression problems [1].\"\n}\nOutput: ",
+      "started_at_utc": "2026-10-13T15:28:36.188382+00:00",
+      "response": "{\n  \"statements\": [\n    \"The parameter min_samples_leaf controls the minimum number of samples required to be at a leaf node.\",\n    \"The parameter min_samples_leaf ensures that multiple samples inform every decision in the tree by controlling which splits will be considered.\",\n    \"The parameter min_samples_leaf guarantees that each leaf has a minimum size.\",\n    \"The minimum size guarantee helps avoid low-variance, over-fit leaf nodes in regression problems.\"\n  ]\n}",
+      "finish_reason": "stop",
+      "usage": {
+        "input_tokens": 447,
+        "output_tokens": 99,
+        "total_tokens": 546,
+        "input_token_details": {
+          "cache_read": 0
+        },
+        "output_token_details": {}
+      },
+      "duration_s": 2.25,
+      "finished_at_utc": "2026-10-13T15:28:38.436132+00:00"
+    },
+    {
+      "number": 2,
+      "question_id": "sh-04",
+      "metric": "faithfulness",
+      "status": "completed",
+      "prompt": "Your task is to judge the faithfulness of a series of statements based on a given context. For each statement you must return verdict as 1 if the statement can be directly inferred based on the context or 0 if the statement can not be directly inferred based on the context.\nPlease return the output in a JSON format that complies with the following schema as specified in JSON Schema:\n{\"$defs\": {\"StatementFaithfulnessAnswer\": {\"properties\": {\"statement\": {\"description\": \"the original statement, word-by-word\", \"title\": \"Statement\", \"type\": \"string\"}, \"reason\": {\"description\": \"the reason of the verdict\", \"title\": \"Reason\", \"type\": \"string\"}, \"verdict\": {\"description\": \"the verdict(0/1) of the faithfulness.\", \"title\": \"Verdict\", \"type\": \"integer\"}}, \"required\": [\"statement\", \"reason\", \"verdict\"], \"title\": \"StatementFaithfulnessAnswer\", \"type\": \"object\"}}, \"properties\": {\"statements\": {\"items\": {\"$ref\": \"#/$defs/StatementFaithfulnessAnswer\"}, \"title\": \"Statements\", \"type\": \"array\"}}, \"required\": [\"statements\"], \"title\": \"NLIStatementOutput\", \"type\": \"object\"}Do not use single quotes in your response but double quotes,properly escaped with a backslash.\n\n--------EXAMPLES-----------\nExample 1\nInput: {\n    \"context\": \"John is a student at XYZ University. He is pursuing a degree in Computer Science. He is enrolled in several courses this semester, including Data Structures, Algorithms, and Database Management. John is a diligent student and spends a significant amount of time studying and completing assignments. He often stays late in the library to work on his projects.\",\n    \"statements\": [\n        \"John is majoring in Biology.\",\n        \"John is taking a course on Artificial Intelligence.\",\n        \"John is a dedicated student.\",\n        \"John has a part-time job.\"\n    ]\n}\nOutput: {\n    \"statements\": [\n        {\n            \"statement\": \"John is majoring in Biology.\",\n            \"reason\": \"John's major is explicitly mentioned as Computer Science. There is no information suggesting he is majoring in Biology.\",\n            \"verdict\": 0\n        },\n        {\n            \"statement\": \"John is taking a course on Artificial Intelligence.\",\n            \"reason\": \"The context mentions the courses John is currently enrolled in, and Artificial Intelligence is not mentioned. Therefore, it cannot be deduced that John is taking a course on AI.\",\n            \"verdict\": 0\n        },\n        {\n            \"statement\": \"John is a dedicated student.\",\n            \"reason\": \"The context states that he spends a significant amount of time studying and completing assignments. Additionally, it mentions that he often stays late in the library to work on his projects, which implies dedication.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"John has a part-time job.\",\n            \"reason\": \"There is no information given in the context about John having a part-time job.\",\n            \"verdict\": 0\n        }\n    ]\n}\n\nExample 2\nInput: {\n    \"context\": \"Photosynthesis is a process used by plants, algae, and certain bacteria to convert light energy into chemical energy.\",\n    \"statements\": [\n        \"Albert Einstein was a genius.\"\n    ]\n}\nOutput: {\n    \"statements\": [\n        {\n            \"statement\": \"Albert Einstein was a genius.\",\n            \"reason\": \"The context and statement are unrelated\",\n            \"verdict\": 0\n        }\n    ]\n}\n-----------------------------\n\nNow perform the same with the following input\ninput: {\n    \"context\": \"1.10. Decision Trees\\n1.10.5. Tips on practical use\\n\\nfor each additional level the tree grows to.  Use max_depth to control\\nthe size of the tree to prevent overfitting. Use min_samples_split or min_samples_leaf to ensure that multiple\\nsamples inform every decision in the tree, by controlling which splits will\\nbe considered. A very small number will usually mean the tree will overfit,\\nwhereas a large number will prevent the tree from learning the data. Try min_samples_leaf=5 as an initial value. If the sample size varies\\ngreatly, a float number can be used as percentage in these two parameters.\\nWhile min_samples_split can create arbitrarily small leaves, min_samples_leaf guarantees that each leaf has a minimum size, avoiding\\nlow-variance, over-fit leaf nodes in regression problems.  For\\nclassification with few classes, min_samples_leaf=1 is often the best\\n1.10. Decision Trees\\n1.10.5. Tips on practical use\\n\\nlow-variance, over-fit leaf nodes in regression problems.  For\\nclassification with few classes, min_samples_leaf=1 is often the best\\nchoice. Note that min_samples_split considers samples directly and independent of sample_weight , if provided (e.g. a node with m weighted samples is still\\ntreated as having exactly m samples). Consider min_weight_fraction_leaf or min_impurity_decrease if accounting for sample weights is required at splits. Balance your dataset before training to prevent the tree from being biased\\ntoward the classes that are dominant. Class balancing can be done by\\nsampling an equal number of samples from each class, or preferably by\\nnormalizing the sum of the sample weights ( sample_weight ) for each\\nclass to the same value. Also note that weight-based pre-pruning criteria,\\nsuch as min_weight_fraction_leaf , will then be less biased toward\\ndominant classes than criteria that are not aware of the sample weights,\\n1.10. Decision Trees\\n1.10.5. Tips on practical use\\n\\nsuch as min_weight_fraction_leaf , will then be less biased toward\\ndominant classes than criteria that are not aware of the sample weights,\\nlike min_samples_leaf . If the samples are weighted, it will be easier to optimize the tree\\nstructure using weight-based pre-pruning criterion such as min_weight_fraction_leaf , which ensures that leaf nodes contain at least\\na fraction of the overall sum of the sample weights. All decision trees use np.float32 arrays internally.\\nIf training data is not in this format, a copy of the dataset will be made. If the input matrix X is very sparse, it is recommended to convert to sparse csc_matrix before calling fit and sparse csr_matrix before calling\\npredict. Training time can be orders of magnitude faster for a sparse\\nmatrix input compared to a dense matrix when features have zero values in\\nmost of the samples.\\n1.10. Decision Trees\\n1.10.5. Tips on practical use\\n\\nDecision trees tend to overfit on data with a large number of features.\\nGetting the right ratio of samples to number of features is important, since\\na tree with few samples in high dimensional space is very likely to overfit. Consider performing  dimensionality reduction ( PCA , ICA , or Feature selection ) beforehand to\\ngive your tree a better chance of finding features that are discriminative. Understanding the decision tree structure will help\\nin gaining more insights about how the decision tree makes predictions, which is\\nimportant for understanding the important features in the data. Visualize your tree as you are training by using the export function.  Use max_depth=3 as an initial tree depth to get a feel for\\nhow the tree is fitting to your data, and then increase the depth. Remember that the number of samples required to populate the tree doubles\\nfor each additional level the tree grows to.  Use max_depth to control\",\n    \"statements\": [\n        \"The parameter min_samples_leaf controls the minimum number of samples required to be at a leaf node.\",\n        \"The parameter min_samples_leaf ensures that multiple samples inform every decision in the tree by controlling which splits will be considered.\",\n        \"The parameter min_samples_leaf guarantees that each leaf has a minimum size.\",\n        \"The minimum size guarantee helps avoid low-variance, over-fit leaf nodes in regression problems.\"\n    ]\n}\nOutput: ",
+      "started_at_utc": "2026-10-13T15:28:58.443065+00:00",
+      "response": "{\n    \"statements\": [\n        {\n            \"statement\": \"The parameter min_samples_leaf controls the minimum number of samples required to be at a leaf node.\",\n            \"reason\": \"The context states that 'min_samples_leaf guarantees that each leaf has a minimum size' and that 'min_samples_split considers samples directly'. While it doesn't explicitly define min_samples_leaf as 'minimum number of samples', the phrase 'minimum size' in the context of decision trees and the comparison with min_samples_split (which considers samples) implies it controls the leaf size in terms of sample count. This is a standard definition and can be inferred from the text's description of its function.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"The parameter min_samples_leaf ensures that multiple samples inform every decision in the tree by controlling which splits will be considered.\",\n            \"reason\": \"The context explicitly attributes this function to 'min_samples_split or min_samples_leaf' in the sentence: 'Use min_samples_split or min_samples_leaf to ensure that multiple samples inform every decision in the tree, by controlling which splits will be considered.' Therefore, this statement is supported by the text.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"The parameter min_samples_leaf guarantees that each leaf has a minimum size.\",\n            \"reason\": \"The context explicitly states: 'min_samples_leaf guarantees that each leaf has a minimum size'. This is a direct match.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"The minimum size guarantee helps avoid low-variance, over-fit leaf nodes in regression problems.\",\n            \"reason\": \"The context states: 'min_samples_leaf guarantees that each leaf has a minimum size, avoiding low-variance, over-fit leaf nodes in regression problems.' This is a direct inference.\",\n            \"verdict\": 1\n        }\n    ]\n}",
+      "finish_reason": "stop",
+      "usage": {
+        "input_tokens": 1749,
+        "output_tokens": 407,
+        "total_tokens": 2156,
+        "input_token_details": {
+          "cache_read": 0
+        },
+        "output_token_details": {}
+      },
+      "duration_s": 5.5939999998081475,
+      "finished_at_utc": "2026-10-13T15:29:04.047978+00:00"
+    },
+    {
+      "number": 3,
+      "question_id": "sh-04",
+      "metric": "answer_relevancy",
+      "status": "completed",
+      "prompt": "Generate a question for the given answer and Identify if answer is noncommittal. Give noncommittal as 1 if the answer is noncommittal and 0 if the answer is committal. A noncommittal answer is one that is evasive, vague, or ambiguous. For example, \"I don't know\" or \"I'm not sure\" are noncommittal answers\nPlease return the output in a JSON format that complies with the following schema as specified in JSON Schema:\n{\"properties\": {\"question\": {\"title\": \"Question\", \"type\": \"string\"}, \"noncommittal\": {\"title\": \"Noncommittal\", \"type\": \"integer\"}}, \"required\": [\"question\", \"noncommittal\"], \"title\": \"ResponseRelevanceOutput\", \"type\": \"object\"}Do not use single quotes in your response but double quotes,properly escaped with a backslash.\n\n--------EXAMPLES-----------\nExample 1\nInput: {\n    \"response\": \"Albert Einstein was born in Germany.\"\n}\nOutput: {\n    \"question\": \"Where was Albert Einstein born?\",\n    \"noncommittal\": 0\n}\n\nExample 2\nInput: {\n    \"response\": \"I don't know about the  groundbreaking feature of the smartphone invented in 2023 as am unaware of information beyond 2022. \"\n}\nOutput: {\n    \"question\": \"What was the groundbreaking feature of the smartphone invented in 2023?\",\n    \"noncommittal\": 1\n}\n-----------------------------\n\nNow perform the same with the following input\ninput: {\n    \"response\": \"`min_samples_leaf` controls the minimum number of samples required to be at a leaf node [1]. It ensures that multiple samples inform every decision in the tree by controlling which splits will be considered [1]. Specifically, `min_samples_leaf` guarantees that each leaf has a minimum size, which helps avoid low-variance, over-fit leaf nodes in regression problems [1].\"\n}\nOutput: ",
+      "started_at_utc": "2026-10-13T15:29:24.039396+00:00",
+      "response": "{\n  \"question\": \"What is the purpose of the min_samples_leaf parameter in decision trees?\",\n  \"noncommittal\": 0\n}",
+      "finish_reason": "stop",
+      "usage": {
+        "input_tokens": 438,
+        "output_tokens": 33,
+        "total_tokens": 471,
+        "input_token_details": {
+          "cache_read": 0
+        },
+        "output_token_details": {}
+      },
+      "duration_s": 1.297000000020489,
+      "finished_at_utc": "2026-10-13T15:29:25.351684+00:00"
+    },
+    {
+      "number": 4,
+      "question_id": "sh-05",
+      "metric": "faithfulness",
+      "status": "completed",
+      "prompt": "Given a question and an answer, analyze the complexity of each sentence in the answer. Break down each sentence into one or more fully understandable statements. Ensure that no pronouns are used in any statement. Format the outputs in JSON.\nPlease return the output in a JSON format that complies with the following schema as specified in JSON Schema:\n{\"properties\": {\"statements\": {\"description\": \"The generated statements\", \"items\": {\"type\": \"string\"}, \"title\": \"Statements\", \"type\": \"array\"}}, \"required\": [\"statements\"], \"title\": \"StatementGeneratorOutput\", \"type\": \"object\"}Do not use single quotes in your response but double quotes,properly escaped with a backslash.\n\n--------EXAMPLES-----------\nExample 1\nInput: {\n    \"question\": \"Who was Albert Einstein and what is he best known for?\",\n    \"answer\": \"He was a German-born theoretical physicist, widely acknowledged to be one of the greatest and most influential physicists of all time. He was best known for developing the theory of relativity, he also made important contributions to the development of the theory of quantum mechanics.\"\n}\nOutput: {\n    \"statements\": [\n        \"Albert Einstein was a German-born theoretical physicist.\",\n        \"Albert Einstein is recognized as one of the greatest and most influential physicists of all time.\",\n        \"Albert Einstein was best known for developing the theory of relativity.\",\n        \"Albert Einstein also made important contributions to the development of the theory of quantum mechanics.\"\n    ]\n}\n-----------------------------\n\nNow perform the same with the following input\ninput: {\n    \"question\": \"When does a decision tree overfit?\",\n    \"answer\": \"A decision tree tends to overfit in the following situations:\\n\\n1.  **High Dimensionality with Few Samples**: It overfits on data with a large number of features, particularly when the ratio of samples to the number of features is not right. A tree with few samples in high-dimensional space is very likely to overfit [1].\\n2.  **Over-complexity**: It can create over-complex trees that do not generalize the data well [2].\\n3.  **Lack of Constraints**: Without mechanisms such as pruning, setting the minimum number of samples required at a leaf node, or setting the maximum depth, overfitting occurs [2]. Specifically, using a very small number for parameters like `min_samples_split` or `min_samples_leaf` usually means the tree will overfit [3].\\n4.  **High Variance**: Individual decision trees typically exhibit high variance and tend to overfit [4].\"\n}\nOutput: ",
+      "started_at_utc": "2026-10-13T15:29:45.355175+00:00",
+      "response": "{\n  \"statements\": [\n    \"A decision tree tends to overfit in high dimensionality with few samples.\",\n    \"A decision tree overfits on data with a large number of features.\",\n    \"A decision tree overfits when the ratio of samples to the number of features is not right.\",\n    \"A tree with few samples in high-dimensional space is very likely to overfit.\",\n    \"A decision tree can create over-complex trees that do not generalize the data well.\",\n    \"A decision tree overfits without mechanisms such as pruning.\",\n    \"A decision tree overfits without setting the minimum number of samples required at a leaf node.\",\n    \"A decision tree overfits without setting the maximum depth.\",\n    \"Using a very small number for parameters like min_samples_split usually means the tree will overfit.\",\n    \"Using a very small number for parameters like min_samples_leaf usually means the tree will overfit.\",\n    \"Individual decision trees typically exhibit high variance.\",\n    \"Individual decision trees tend to overfit.\"\n  ]\n}",
+      "finish_reason": "stop",
+      "usage": {
+        "input_tokens": 566,
+        "output_tokens": 224,
+        "total_tokens": 790,
+        "input_token_details": {
+          "cache_read": 0
+        },
+        "output_token_details": {}
+      },
+      "duration_s": 4.125,
+      "finished_at_utc": "2026-10-13T15:29:49.477025+00:00"
+    },
+    {
+      "number": 5,
+      "question_id": "sh-05",
+      "metric": "faithfulness",
+      "status": "completed",
+      "prompt": "Your task is to judge the faithfulness of a series of statements based on a given context. For each statement you must return verdict as 1 if the statement can be directly inferred based on the context or 0 if the statement can not be directly inferred based on the context.\nPlease return the output in a JSON format that complies with the following schema as specified in JSON Schema:\n{\"$defs\": {\"StatementFaithfulnessAnswer\": {\"properties\": {\"statement\": {\"description\": \"the original statement, word-by-word\", \"title\": \"Statement\", \"type\": \"string\"}, \"reason\": {\"description\": \"the reason of the verdict\", \"title\": \"Reason\", \"type\": \"string\"}, \"verdict\": {\"description\": \"the verdict(0/1) of the faithfulness.\", \"title\": \"Verdict\", \"type\": \"integer\"}}, \"required\": [\"statement\", \"reason\", \"verdict\"], \"title\": \"StatementFaithfulnessAnswer\", \"type\": \"object\"}}, \"properties\": {\"statements\": {\"items\": {\"$ref\": \"#/$defs/StatementFaithfulnessAnswer\"}, \"title\": \"Statements\", \"type\": \"array\"}}, \"required\": [\"statements\"], \"title\": \"NLIStatementOutput\", \"type\": \"object\"}Do not use single quotes in your response but double quotes,properly escaped with a backslash.\n\n--------EXAMPLES-----------\nExample 1\nInput: {\n    \"context\": \"John is a student at XYZ University. He is pursuing a degree in Computer Science. He is enrolled in several courses this semester, including Data Structures, Algorithms, and Database Management. John is a diligent student and spends a significant amount of time studying and completing assignments. He often stays late in the library to work on his projects.\",\n    \"statements\": [\n        \"John is majoring in Biology.\",\n        \"John is taking a course on Artificial Intelligence.\",\n        \"John is a dedicated student.\",\n        \"John has a part-time job.\"\n    ]\n}\nOutput: {\n    \"statements\": [\n        {\n            \"statement\": \"John is majoring in Biology.\",\n            \"reason\": \"John's major is explicitly mentioned as Computer Science. There is no information suggesting he is majoring in Biology.\",\n            \"verdict\": 0\n        },\n        {\n            \"statement\": \"John is taking a course on Artificial Intelligence.\",\n            \"reason\": \"The context mentions the courses John is currently enrolled in, and Artificial Intelligence is not mentioned. Therefore, it cannot be deduced that John is taking a course on AI.\",\n            \"verdict\": 0\n        },\n        {\n            \"statement\": \"John is a dedicated student.\",\n            \"reason\": \"The context states that he spends a significant amount of time studying and completing assignments. Additionally, it mentions that he often stays late in the library to work on his projects, which implies dedication.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"John has a part-time job.\",\n            \"reason\": \"There is no information given in the context about John having a part-time job.\",\n            \"verdict\": 0\n        }\n    ]\n}\n\nExample 2\nInput: {\n    \"context\": \"Photosynthesis is a process used by plants, algae, and certain bacteria to convert light energy into chemical energy.\",\n    \"statements\": [\n        \"Albert Einstein was a genius.\"\n    ]\n}\nOutput: {\n    \"statements\": [\n        {\n            \"statement\": \"Albert Einstein was a genius.\",\n            \"reason\": \"The context and statement are unrelated\",\n            \"verdict\": 0\n        }\n    ]\n}\n-----------------------------\n\nNow perform the same with the following input\ninput: {\n    \"context\": \"1.10. Decision Trees\\n1.10.5. Tips on practical use\\n\\nDecision trees tend to overfit on data with a large number of features.\\nGetting the right ratio of samples to number of features is important, since\\na tree with few samples in high dimensional space is very likely to overfit. Consider performing  dimensionality reduction ( PCA , ICA , or Feature selection ) beforehand to\\ngive your tree a better chance of finding features that are discriminative. Understanding the decision tree structure will help\\nin gaining more insights about how the decision tree makes predictions, which is\\nimportant for understanding the important features in the data. Visualize your tree as you are training by using the export function.  Use max_depth=3 as an initial tree depth to get a feel for\\nhow the tree is fitting to your data, and then increase the depth. Remember that the number of samples required to populate the tree doubles\\nfor each additional level the tree grows to.  Use max_depth to control\\n1.10. Decision Trees\\n\\nDecision-tree learners can create over-complex trees that do not\\ngeneralize the data well. This is called overfitting. Mechanisms\\nsuch as pruning, setting the minimum number of samples required\\nat a leaf node or setting the maximum depth of the tree are\\nnecessary to avoid this problem. Decision trees can be unstable because small variations in the\\ndata might result in a completely different tree being generated.\\nThis problem is mitigated by using decision trees within an\\nensemble. Predictions of decision trees are neither smooth nor continuous, but\\npiecewise constant approximations as seen in the above figure. Therefore,\\nthey are not good at extrapolation. The problem of learning an optimal decision tree is known to be\\nNP-complete under several aspects of optimality and even for simple\\nconcepts. Consequently, practical decision-tree learning algorithms\\nare based on heuristic algorithms such as the greedy algorithm where\\n1.10. Decision Trees\\n1.10.5. Tips on practical use\\n\\nfor each additional level the tree grows to.  Use max_depth to control\\nthe size of the tree to prevent overfitting. Use min_samples_split or min_samples_leaf to ensure that multiple\\nsamples inform every decision in the tree, by controlling which splits will\\nbe considered. A very small number will usually mean the tree will overfit,\\nwhereas a large number will prevent the tree from learning the data. Try min_samples_leaf=5 as an initial value. If the sample size varies\\ngreatly, a float number can be used as percentage in these two parameters.\\nWhile min_samples_split can create arbitrarily small leaves, min_samples_leaf guarantees that each leaf has a minimum size, avoiding\\nlow-variance, over-fit leaf nodes in regression problems.  For\\nclassification with few classes, min_samples_leaf=1 is often the best\\n1.11. Ensembles: Gradient boosting, random forests, bagging, voting, stacking\\n1.11.2. Random forests and other randomized tree ensembles\\n1.11.2.1. Random Forests\\n\\nThe purpose of these two sources of randomness (bootstrapping the samples and\\nrandomly selecting features at each split) is to decrease the variance of the\\nforest estimator. Indeed, individual decision trees typically exhibit high\\nvariance and tend to overfit. The injected randomness in forests yield decision\\ntrees with somewhat decoupled prediction errors. By taking an average of those\\npredictions, some errors can cancel out. Random forests achieve a reduced\\nvariance by combining diverse trees, sometimes at the cost of a slight increase\\nin bias. In practice the variance reduction is often significant hence yielding\\nan overall better model.\",\n    \"statements\": [\n        \"A decision tree tends to overfit in high dimensionality with few samples.\",\n        \"A decision tree overfits on data with a large number of features.\",\n        \"A decision tree overfits when the ratio of samples to the number of features is not right.\",\n        \"A tree with few samples in high-dimensional space is very likely to overfit.\",\n        \"A decision tree can create over-complex trees that do not generalize the data well.\",\n        \"A decision tree overfits without mechanisms such as pruning.\",\n        \"A decision tree overfits without setting the minimum number of samples required at a leaf node.\",\n        \"A decision tree overfits without setting the maximum depth.\",\n        \"Using a very small number for parameters like min_samples_split usually means the tree will overfit.\",\n        \"Using a very small number for parameters like min_samples_leaf usually means the tree will overfit.\",\n        \"Individual decision trees typically exhibit high variance.\",\n        \"Individual decision trees tend to overfit.\"\n    ]\n}\nOutput: ",
+      "started_at_utc": "2026-10-13T15:30:09.477493+00:00",
+      "response": "{\n    \"statements\": [\n        {\n            \"statement\": \"A decision tree tends to overfit in high dimensionality with few samples.\",\n            \"reason\": \"The context states that 'a tree with few samples in high dimensional space is very likely to overfit' and that 'Decision trees tend to overfit on data with a large number of features.' Combining these, it can be inferred that high dimensionality (large number of features) with few samples leads to overfitting.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"A decision tree overfits on data with a large number of features.\",\n            \"reason\": \"The context explicitly states: 'Decision trees tend to overfit on data with a large number of features.'\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"A decision tree overfits when the ratio of samples to the number of features is not right.\",\n            \"reason\": \"The context states: 'Getting the right ratio of samples to number of features is important, since a tree with few samples in high dimensional space is very likely to overfit.' This implies that an incorrect (specifically low) ratio leads to overfitting.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"A tree with few samples in high-dimensional space is very likely to overfit.\",\n            \"reason\": \"The context explicitly states: 'a tree with few samples in high dimensional space is very likely to overfit.'\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"A decision tree can create over-complex trees that do not generalize the data well.\",\n            \"reason\": \"The context states: 'Decision-tree learners can create over-complex trees that do not generalize the data well.'\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"A decision tree overfits without mechanisms such as pruning.\",\n            \"reason\": \"The context states: 'Mechanisms such as pruning... are necessary to avoid this problem [overfitting].' This implies that without these mechanisms, the problem of overfitting is more likely to occur or persist.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"A decision tree overfits without setting the minimum number of samples required at a leaf node.\",\n            \"reason\": \"The context lists 'setting the minimum number of samples required at a leaf node' as a mechanism 'necessary to avoid this problem [overfitting].' Thus, without it, overfitting is a risk.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"A decision tree overfits without setting the maximum depth.\",\n            \"reason\": \"The context lists 'setting the maximum depth of the tree' as a mechanism 'necessary to avoid this problem [overfitting].' Thus, without it, overfitting is a risk.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"Using a very small number for parameters like min_samples_split usually means the tree will overfit.\",\n            \"reason\": \"The context states: 'A very small number will usually mean the tree will overfit' in the context of using min_samples_split or min_samples_leaf.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"Using a very small number for parameters like min_samples_leaf usually means the tree will overfit.\",\n            \"reason\": \"The context states: 'A very small number will usually mean the tree will overfit' in the context of using min_samples_split or min_samples_leaf.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"Individual decision trees typically exhibit high variance.\",\n            \"reason\": \"The context explicitly states: 'individual decision trees typically exhibit high variance'.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"Individual decision trees tend to overfit.\",\n            \"reason\": \"The context explicitly states: 'individual decision trees typically exhibit high variance and tend to overfit.'\",\n            \"verdict\": 1\n        }\n    ]\n}",
+      "finish_reason": "stop",
+      "usage": {
+        "input_tokens": 1827,
+        "output_tokens": 907,
+        "total_tokens": 2734,
+        "input_token_details": {
+          "cache_read": 0
+        },
+        "output_token_details": {}
+      },
+      "duration_s": 16.875,
+      "finished_at_utc": "2026-10-13T15:30:26.416553+00:00"
+    },
+    {
+      "number": 6,
+      "question_id": "sh-05",
+      "metric": "answer_relevancy",
+      "status": "completed",
+      "prompt": "Generate a question for the given answer and Identify if answer is noncommittal. Give noncommittal as 1 if the answer is noncommittal and 0 if the answer is committal. A noncommittal answer is one that is evasive, vague, or ambiguous. For example, \"I don't know\" or \"I'm not sure\" are noncommittal answers\nPlease return the output in a JSON format that complies with the following schema as specified in JSON Schema:\n{\"properties\": {\"question\": {\"title\": \"Question\", \"type\": \"string\"}, \"noncommittal\": {\"title\": \"Noncommittal\", \"type\": \"integer\"}}, \"required\": [\"question\", \"noncommittal\"], \"title\": \"ResponseRelevanceOutput\", \"type\": \"object\"}Do not use single quotes in your response but double quotes,properly escaped with a backslash.\n\n--------EXAMPLES-----------\nExample 1\nInput: {\n    \"response\": \"Albert Einstein was born in Germany.\"\n}\nOutput: {\n    \"question\": \"Where was Albert Einstein born?\",\n    \"noncommittal\": 0\n}\n\nExample 2\nInput: {\n    \"response\": \"I don't know about the  groundbreaking feature of the smartphone invented in 2023 as am unaware of information beyond 2022. \"\n}\nOutput: {\n    \"question\": \"What was the groundbreaking feature of the smartphone invented in 2023?\",\n    \"noncommittal\": 1\n}\n-----------------------------\n\nNow perform the same with the following input\ninput: {\n    \"response\": \"A decision tree tends to overfit in the following situations:\\n\\n1.  **High Dimensionality with Few Samples**: It overfits on data with a large number of features, particularly when the ratio of samples to the number of features is not right. A tree with few samples in high-dimensional space is very likely to overfit [1].\\n2.  **Over-complexity**: It can create over-complex trees that do not generalize the data well [2].\\n3.  **Lack of Constraints**: Without mechanisms such as pruning, setting the minimum number of samples required at a leaf node, or setting the maximum depth, overfitting occurs [2]. Specifically, using a very small number for parameters like `min_samples_split` or `min_samples_leaf` usually means the tree will overfit [3].\\n4.  **High Variance**: Individual decision trees typically exhibit high variance and tend to overfit [4].\"\n}\nOutput: ",
+      "started_at_utc": "2026-10-13T15:30:46.416046+00:00",
+      "response": "{\n  \"question\": \"In what situations does a decision tree tend to overfit?\",\n  \"noncommittal\": 0\n}",
+      "finish_reason": "stop",
+      "usage": {
+        "input_tokens": 560,
+        "output_tokens": 31,
+        "total_tokens": 591,
+        "input_token_details": {
+          "cache_read": 0
+        },
+        "output_token_details": {}
+      },
+      "duration_s": 0.75,
+      "finished_at_utc": "2026-10-13T15:30:47.180050+00:00"
+    },
+    {
+      "number": 7,
+      "question_id": "sh-06",
+      "metric": "faithfulness",
+      "status": "completed",
+      "prompt": "Given a question and an answer, analyze the complexity of each sentence in the answer. Break down each sentence into one or more fully understandable statements. Ensure that no pronouns are used in any statement. Format the outputs in JSON.\nPlease return the output in a JSON format that complies with the following schema as specified in JSON Schema:\n{\"properties\": {\"statements\": {\"description\": \"The generated statements\", \"items\": {\"type\": \"string\"}, \"title\": \"Statements\", \"type\": \"array\"}}, \"required\": [\"statements\"], \"title\": \"StatementGeneratorOutput\", \"type\": \"object\"}Do not use single quotes in your response but double quotes,properly escaped with a backslash.\n\n--------EXAMPLES-----------\nExample 1\nInput: {\n    \"question\": \"Who was Albert Einstein and what is he best known for?\",\n    \"answer\": \"He was a German-born theoretical physicist, widely acknowledged to be one of the greatest and most influential physicists of all time. He was best known for developing the theory of relativity, he also made important contributions to the development of the theory of quantum mechanics.\"\n}\nOutput: {\n    \"statements\": [\n        \"Albert Einstein was a German-born theoretical physicist.\",\n        \"Albert Einstein is recognized as one of the greatest and most influential physicists of all time.\",\n        \"Albert Einstein was best known for developing the theory of relativity.\",\n        \"Albert Einstein also made important contributions to the development of the theory of quantum mechanics.\"\n    ]\n}\n-----------------------------\n\nNow perform the same with the following input\ninput: {\n    \"question\": \"What is the formula for precision?\",\n    \"answer\": \"The formula for precision is [1]:\\n\\n\\\\[\\n\\\\text{precision} = \\\\frac{\\\\text{tp}}{\\\\text{tp} + \\\\text{fp}}\\n\\\\]\\n\\nwhere **tp** stands for true positives and **fp** stands for false positives [3].\"\n}\nOutput: ",
+      "started_at_utc": "2026-10-13T15:31:07.182297+00:00",
+      "response": "{\n  \"statements\": [\n    \"The formula for precision is tp divided by the sum of tp and fp.\",\n    \"tp stands for true positives.\",\n    \"fp stands for false positives.\"\n  ]\n}",
+      "finish_reason": "stop",
+      "usage": {
+        "input_tokens": 434,
+        "output_tokens": 49,
+        "total_tokens": 483,
+        "input_token_details": {
+          "cache_read": 0
+        },
+        "output_token_details": {}
+      },
+      "duration_s": 0.8440000000409782,
+      "finished_at_utc": "2026-10-13T15:31:08.064724+00:00"
+    },
+    {
+      "number": 8,
+      "question_id": "sh-06",
+      "metric": "faithfulness",
+      "status": "completed",
+      "prompt": "Your task is to judge the faithfulness of a series of statements based on a given context. For each statement you must return verdict as 1 if the statement can be directly inferred based on the context or 0 if the statement can not be directly inferred based on the context.\nPlease return the output in a JSON format that complies with the following schema as specified in JSON Schema:\n{\"$defs\": {\"StatementFaithfulnessAnswer\": {\"properties\": {\"statement\": {\"description\": \"the original statement, word-by-word\", \"title\": \"Statement\", \"type\": \"string\"}, \"reason\": {\"description\": \"the reason of the verdict\", \"title\": \"Reason\", \"type\": \"string\"}, \"verdict\": {\"description\": \"the verdict(0/1) of the faithfulness.\", \"title\": \"Verdict\", \"type\": \"integer\"}}, \"required\": [\"statement\", \"reason\", \"verdict\"], \"title\": \"StatementFaithfulnessAnswer\", \"type\": \"object\"}}, \"properties\": {\"statements\": {\"items\": {\"$ref\": \"#/$defs/StatementFaithfulnessAnswer\"}, \"title\": \"Statements\", \"type\": \"array\"}}, \"required\": [\"statements\"], \"title\": \"NLIStatementOutput\", \"type\": \"object\"}Do not use single quotes in your response but double quotes,properly escaped with a backslash.\n\n--------EXAMPLES-----------\nExample 1\nInput: {\n    \"context\": \"John is a student at XYZ University. He is pursuing a degree in Computer Science. He is enrolled in several courses this semester, including Data Structures, Algorithms, and Database Management. John is a diligent student and spends a significant amount of time studying and completing assignments. He often stays late in the library to work on his projects.\",\n    \"statements\": [\n        \"John is majoring in Biology.\",\n        \"John is taking a course on Artificial Intelligence.\",\n        \"John is a dedicated student.\",\n        \"John has a part-time job.\"\n    ]\n}\nOutput: {\n    \"statements\": [\n        {\n            \"statement\": \"John is majoring in Biology.\",\n            \"reason\": \"John's major is explicitly mentioned as Computer Science. There is no information suggesting he is majoring in Biology.\",\n            \"verdict\": 0\n        },\n        {\n            \"statement\": \"John is taking a course on Artificial Intelligence.\",\n            \"reason\": \"The context mentions the courses John is currently enrolled in, and Artificial Intelligence is not mentioned. Therefore, it cannot be deduced that John is taking a course on AI.\",\n            \"verdict\": 0\n        },\n        {\n            \"statement\": \"John is a dedicated student.\",\n            \"reason\": \"The context states that he spends a significant amount of time studying and completing assignments. Additionally, it mentions that he often stays late in the library to work on his projects, which implies dedication.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"John has a part-time job.\",\n            \"reason\": \"There is no information given in the context about John having a part-time job.\",\n            \"verdict\": 0\n        }\n    ]\n}\n\nExample 2\nInput: {\n    \"context\": \"Photosynthesis is a process used by plants, algae, and certain bacteria to convert light energy into chemical energy.\",\n    \"statements\": [\n        \"Albert Einstein was a genius.\"\n    ]\n}\nOutput: {\n    \"statements\": [\n        {\n            \"statement\": \"Albert Einstein was a genius.\",\n            \"reason\": \"The context and statement are unrelated\",\n            \"verdict\": 0\n        }\n    ]\n}\n-----------------------------\n\nNow perform the same with the following input\ninput: {\n    \"context\": \"3.4. Metrics and scoring: quantifying the quality of predictions\\n3.4.4. Classification metrics\\n3.4.4.9. Precision, recall and F-measures\\n3.4.4.9.1. Binary classification\\n\\n\\\\[\\\\text{precision} = \\\\frac{\\\\text{tp}}{\\\\text{tp} + \\\\text{fp}},\\\\]\\n\\n\\\\[\\\\text{recall} = \\\\frac{\\\\text{tp}}{\\\\text{tp} + \\\\text{fn}},\\\\]\\n\\n(Sometimes recall is also called ‘’sensitivity’’)\\n\\nF-measure is the weighted harmonic mean of precision and recall, with precision’s\\ncontribution to the mean weighted by some parameter \\\\(\\\\beta\\\\) :\\n\\n\\\\[F_\\\\beta = (1 + \\\\beta^2) \\\\frac{\\\\text{precision} \\\\times \\\\text{recall}}{\\\\beta^2 \\\\text{precision} + \\\\text{recall}}\\\\]\\n\\nTo avoid division by zero when precision and recall are zero, Scikit-Learn calculates F-measure with this\\notherwise-equivalent formula:\\n\\n\\\\[F_\\\\beta = \\\\frac{(1 + \\\\beta^2) \\\\text{tp}}{(1 + \\\\beta^2) \\\\text{tp} + \\\\text{fp} + \\\\beta^2 \\\\text{fn}}\\\\]\\n3.4. Metrics and scoring: quantifying the quality of predictions\\n3.4.4. Classification metrics\\n3.4.4.9. Precision, recall and F-measures\\n3.4.4.9.1. Binary classification\\n\\n```\\n>>> from sklearn import metrics\\n>>> y_pred = [0, 1, 0, 0]\\n>>> y_true = [0, 1, 0, 1]\\n>>> metrics.precision_score(y_true, y_pred)\\n1.0\\n>>> metrics.recall_score(y_true, y_pred)\\n0.5\\n>>> metrics.f1_score(y_true, y_pred)\\n0.66\\n>>> metrics.fbeta_score(y_true, y_pred, beta=0.5)\\n0.83\\n>>> metrics.fbeta_score(y_true, y_pred, beta=1)\\n0.66\\n>>> metrics.fbeta_score(y_true, y_pred, beta=2)\\n0.55\\n>>> metrics.precision_recall_fscore_support(y_true, y_pred, beta=0.5)\\n(array([0.66, 1.        ]), array([1. , 0.5]), array([0.71, 0.83]), array([2, 2]))\\n\\n\\n>>> import numpy as np\\n>>> from sklearn.metrics import precision_recall_curve\\n>>> from sklearn.metrics import average_precision_score\\n>>> y_true = np.array([0, 0, 1, 1])\\n>>> y_scores = np.array([0.1, 0.4, 0.35, 0.8])\\n>>> precision, recall, threshold = precision_recall_curve(y_true, y_scores)\\n>>> precision\\narray([0.5       , 0.66, 0.5       , 1.        , 1.        ])\\n>>> recall\\narray([1. , 1. , 0.5, 0.5, 0. ])\\n>>> threshold\\narray([0.1 , 0.35, 0.4 , 0.8 ])\\n>>> average_precision_score(y_true, y_scores)\\n0.83\\n```\\n3.4. Metrics and scoring: quantifying the quality of predictions\\n3.4.4. Classification metrics\\n3.4.4.9. Precision, recall and F-measures\\n3.4.4.9.1. Binary classification\\n\\nIn a binary classification task, the terms ‘’positive’’ and ‘’negative’’ refer\\nto the classifier’s prediction, and the terms ‘’true’’ and ‘’false’’ refer to\\nwhether that prediction corresponds to the external judgment (sometimes known\\nas the ‘’observation’’). Given these definitions, we can formulate the\\nfollowing table:\\n\\nActual class (observation) Predicted class\\n(expectation) tp (true positive)\\nCorrect result fp (false positive)\\nUnexpected result fn (false negative)\\nMissing result tn (true negative)\\nCorrect absence of result\\n\\nIn this context, we can define the notions of precision and recall:\\n\\n\\\\[\\\\text{precision} = \\\\frac{\\\\text{tp}}{\\\\text{tp} + \\\\text{fp}},\\\\]\\n\\n\\\\[\\\\text{recall} = \\\\frac{\\\\text{tp}}{\\\\text{tp} + \\\\text{fn}},\\\\]\\n\\n(Sometimes recall is also called ‘’sensitivity’’)\\n3.4. Metrics and scoring: quantifying the quality of predictions\\n3.4.5. Multilabel ranking metrics\\n3.4.5.2. Label ranking average precision\\n\\nFormally, given a binary indicator matrix of the ground truth labels \\\\(y \\\\in \\\\left\\\\{0, 1\\\\right\\\\}^{n_\\\\text{samples} \\\\times n_\\\\text{labels}}\\\\) and the score associated with each label \\\\(\\\\hat{f} \\\\in \\\\mathbb{R}^{n_\\\\text{samples} \\\\times n_\\\\text{labels}}\\\\) ,\\nthe average precision is defined as\\n\\n\\\\[LRAP(y, \\\\hat{f}) = \\\\frac{1}{n_{\\\\text{samples}}}\\n  \\\\sum_{i=0}^{n_{\\\\text{samples}} - 1} \\\\frac{1}{||y_i||_0}\\n  \\\\sum_{j:y_{ij} = 1} \\\\frac{|\\\\mathcal{L}_{ij}|}{\\\\text{rank}_{ij}}\\\\]\\n\\nwhere \\\\(\\\\mathcal{L}_{ij} = \\\\left\\\\{k: y_{ik} = 1, \\\\hat{f}_{ik} \\\\geq \\\\hat{f}_{ij} \\\\right\\\\}\\\\) , \\\\(\\\\text{rank}_{ij} = \\\\left|\\\\left\\\\{k: \\\\hat{f}_{ik} \\\\geq \\\\hat{f}_{ij} \\\\right\\\\}\\\\right|\\\\) , \\\\(|\\\\cdot|\\\\) computes the cardinality of the set (i.e., the number of\\nelements in the set), and \\\\(||\\\\cdot||_0\\\\) is the \\\\(\\\\ell_0\\\\) “norm”\\n(which computes the number of nonzero elements in a vector).\",\n    \"statements\": [\n        \"The formula for precision is tp divided by the sum of tp and fp.\",\n        \"tp stands for true positives.\",\n        \"fp stands for false positives.\"\n    ]\n}\nOutput: ",
+      "started_at_utc": "2026-10-13T15:31:28.059241+00:00",
+      "response": "{\n    \"statements\": [\n        {\n            \"statement\": \"The formula for precision is tp divided by the sum of tp and fp.\",\n            \"reason\": \"The context explicitly provides the formula: \\\\[\\\\text{precision} = \\\\frac{\\\\text{tp}}{\\\\text{tp} + \\\\text{fp}},\\\\], which matches the statement.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"tp stands for true positives.\",\n            \"reason\": \"The context includes a table where 'tp' is associated with 'true positive' in the row for 'Correct result' under 'Predicted class' and 'Actual class'.\",\n            \"verdict\": 1\n        },\n        {\n            \"statement\": \"fp stands for false positives.\",\n            \"reason\": \"The context includes a table where 'fp' is associated with 'false positive' in the row for 'Unexpected result' under 'Predicted class' and 'Actual class'.\",\n            \"verdict\": 1\n        }\n    ]\n}",
+      "finish_reason": "stop",
+      "usage": {
+        "input_tokens": 2309,
+        "output_tokens": 232,
+        "total_tokens": 2541,
+        "input_token_details": {
+          "cache_read": 0
+        },
+        "output_token_details": {}
+      },
+      "duration_s": 3.5630000000819564,
+      "finished_at_utc": "2026-10-13T15:31:31.650220+00:00"
+    },
+    {
+      "number": 9,
+      "question_id": "sh-06",
+      "metric": "answer_relevancy",
+      "status": "completed",
+      "prompt": "Generate a question for the given answer and Identify if answer is noncommittal. Give noncommittal as 1 if the answer is noncommittal and 0 if the answer is committal. A noncommittal answer is one that is evasive, vague, or ambiguous. For example, \"I don't know\" or \"I'm not sure\" are noncommittal answers\nPlease return the output in a JSON format that complies with the following schema as specified in JSON Schema:\n{\"properties\": {\"question\": {\"title\": \"Question\", \"type\": \"string\"}, \"noncommittal\": {\"title\": \"Noncommittal\", \"type\": \"integer\"}}, \"required\": [\"question\", \"noncommittal\"], \"title\": \"ResponseRelevanceOutput\", \"type\": \"object\"}Do not use single quotes in your response but double quotes,properly escaped with a backslash.\n\n--------EXAMPLES-----------\nExample 1\nInput: {\n    \"response\": \"Albert Einstein was born in Germany.\"\n}\nOutput: {\n    \"question\": \"Where was Albert Einstein born?\",\n    \"noncommittal\": 0\n}\n\nExample 2\nInput: {\n    \"response\": \"I don't know about the  groundbreaking feature of the smartphone invented in 2023 as am unaware of information beyond 2022. \"\n}\nOutput: {\n    \"question\": \"What was the groundbreaking feature of the smartphone invented in 2023?\",\n    \"noncommittal\": 1\n}\n-----------------------------\n\nNow perform the same with the following input\ninput: {\n    \"response\": \"The formula for precision is [1]:\\n\\n\\\\[\\n\\\\text{precision} = \\\\frac{\\\\text{tp}}{\\\\text{tp} + \\\\text{fp}}\\n\\\\]\\n\\nwhere **tp** stands for true positives and **fp** stands for false positives [3].\"\n}\nOutput: ",
+      "started_at_utc": "2026-10-13T15:31:51.656251+00:00",
+      "response": "{\n  \"question\": \"What is the formula for precision in terms of true positives and false positives?\",\n  \"noncommittal\": 0\n}",
+      "finish_reason": "stop",
+      "usage": {
+        "input_tokens": 429,
+        "output_tokens": 34,
+        "total_tokens": 463,
+        "input_token_details": {
+          "cache_read": 0
+        },
+        "output_token_details": {}
+      },
+      "duration_s": 0.6720000000204891,
+      "finished_at_utc": "2026-10-13T15:31:52.333155+00:00"
+    }
+  ],
+  "questions": [
+    {
+      "id": "sh-04",
+      "question": "What does min_samples_leaf control in a decision tree?",
+      "answer": "`min_samples_leaf` controls the minimum number of samples required to be at a leaf node [1]. It ensures that multiple samples inform every decision in the tree by controlling which splits will be considered [1]. Specifically, `min_samples_leaf` guarantees that each leaf has a minimum size, which helps avoid low-variance, over-fit leaf nodes in regression problems [1].",
+      "sources": [
+        {
+          "url": "https://scikit-learn.org/1.9/modules/tree.html#tips-on-practical-use",
+          "content": "1.10. Decision Trees\n1.10.5. Tips on practical use\n\nfor each additional level the tree grows to.  Use max_depth to control\nthe size of the tree to prevent overfitting. Use min_samples_split or min_samples_leaf to ensure that multiple\nsamples inform every decision in the tree, by controlling which splits will\nbe considered. A very small number will usually mean the tree will overfit,\nwhereas a large number will prevent the tree from learning the data. Try min_samples_leaf=5 as an initial value. If the sample size varies\ngreatly, a float number can be used as percentage in these two parameters.\nWhile min_samples_split can create arbitrarily small leaves, min_samples_leaf guarantees that each leaf has a minimum size, avoiding\nlow-variance, over-fit leaf nodes in regression problems.  For\nclassification with few classes, min_samples_leaf=1 is often the best"
+        },
+        {
+          "url": "https://scikit-learn.org/1.9/modules/tree.html#tips-on-practical-use",
+          "content": "1.10. Decision Trees\n1.10.5. Tips on practical use\n\nlow-variance, over-fit leaf nodes in regression problems.  For\nclassification with few classes, min_samples_leaf=1 is often the best\nchoice. Note that min_samples_split considers samples directly and independent of sample_weight , if provided (e.g. a node with m weighted samples is still\ntreated as having exactly m samples). Consider min_weight_fraction_leaf or min_impurity_decrease if accounting for sample weights is required at splits. Balance your dataset before training to prevent the tree from being biased\ntoward the classes that are dominant. Class balancing can be done by\nsampling an equal number of samples from each class, or preferably by\nnormalizing the sum of the sample weights ( sample_weight ) for each\nclass to the same value. Also note that weight-based pre-pruning criteria,\nsuch as min_weight_fraction_leaf , will then be less biased toward\ndominant classes than criteria that are not aware of the sample weights,"
+        },
+        {
+          "url": "https://scikit-learn.org/1.9/modules/tree.html#tips-on-practical-use",
+          "content": "1.10. Decision Trees\n1.10.5. Tips on practical use\n\nsuch as min_weight_fraction_leaf , will then be less biased toward\ndominant classes than criteria that are not aware of the sample weights,\nlike min_samples_leaf . If the samples are weighted, it will be easier to optimize the tree\nstructure using weight-based pre-pruning criterion such as min_weight_fraction_leaf , which ensures that leaf nodes contain at least\na fraction of the overall sum of the sample weights. All decision trees use np.float32 arrays internally.\nIf training data is not in this format, a copy of the dataset will be made. If the input matrix X is very sparse, it is recommended to convert to sparse csc_matrix before calling fit and sparse csr_matrix before calling\npredict. Training time can be orders of magnitude faster for a sparse\nmatrix input compared to a dense matrix when features have zero values in\nmost of the samples."
+        },
+        {
+          "url": "https://scikit-learn.org/1.9/modules/tree.html#tips-on-practical-use",
+          "content": "1.10. Decision Trees\n1.10.5. Tips on practical use\n\nDecision trees tend to overfit on data with a large number of features.\nGetting the right ratio of samples to number of features is important, since\na tree with few samples in high dimensional space is very likely to overfit. Consider performing  dimensionality reduction ( PCA , ICA , or Feature selection ) beforehand to\ngive your tree a better chance of finding features that are discriminative. Understanding the decision tree structure will help\nin gaining more insights about how the decision tree makes predictions, which is\nimportant for understanding the important features in the data. Visualize your tree as you are training by using the export function.  Use max_depth=3 as an initial tree depth to get a feel for\nhow the tree is fitting to your data, and then increase the depth. Remember that the number of samples required to populate the tree doubles\nfor each additional level the tree grows to.  Use max_depth to control"
+        }
+      ],
+      "expected_refusal": false,
+      "metrics": {
+        "faithfulness": {
+          "value": 1.0,
+          "status": "completed"
+        },
+        "answer_relevancy": {
+          "value": 0.9683722010569912,
+          "status": "completed"
+        }
+      }
+    },
+    {
+      "id": "sh-05",
+      "question": "When does a decision tree overfit?",
+      "answer": "A decision tree tends to overfit in the following situations:\n\n1.  **High Dimensionality with Few Samples**: It overfits on data with a large number of features, particularly when the ratio of samples to the number of features is not right. A tree with few samples in high-dimensional space is very likely to overfit [1].\n2.  **Over-complexity**: It can create over-complex trees that do not generalize the data well [2].\n3.  **Lack of Constraints**: Without mechanisms such as pruning, setting the minimum number of samples required at a leaf node, or setting the maximum depth, overfitting occurs [2]. Specifically, using a very small number for parameters like `min_samples_split` or `min_samples_leaf` usually means the tree will overfit [3].\n4.  **High Variance**: Individual decision trees typically exhibit high variance and tend to overfit [4].",
+      "sources": [
+        {
+          "url": "https://scikit-learn.org/1.9/modules/tree.html#tips-on-practical-use",
+          "content": "1.10. Decision Trees\n1.10.5. Tips on practical use\n\nDecision trees tend to overfit on data with a large number of features.\nGetting the right ratio of samples to number of features is important, since\na tree with few samples in high dimensional space is very likely to overfit. Consider performing  dimensionality reduction ( PCA , ICA , or Feature selection ) beforehand to\ngive your tree a better chance of finding features that are discriminative. Understanding the decision tree structure will help\nin gaining more insights about how the decision tree makes predictions, which is\nimportant for understanding the important features in the data. Visualize your tree as you are training by using the export function.  Use max_depth=3 as an initial tree depth to get a feel for\nhow the tree is fitting to your data, and then increase the depth. Remember that the number of samples required to populate the tree doubles\nfor each additional level the tree grows to.  Use max_depth to control"
+        },
+        {
+          "url": "https://scikit-learn.org/1.9/modules/tree.html#decision-trees",
+          "content": "1.10. Decision Trees\n\nDecision-tree learners can create over-complex trees that do not\ngeneralize the data well. This is called overfitting. Mechanisms\nsuch as pruning, setting the minimum number of samples required\nat a leaf node or setting the maximum depth of the tree are\nnecessary to avoid this problem. Decision trees can be unstable because small variations in the\ndata might result in a completely different tree being generated.\nThis problem is mitigated by using decision trees within an\nensemble. Predictions of decision trees are neither smooth nor continuous, but\npiecewise constant approximations as seen in the above figure. Therefore,\nthey are not good at extrapolation. The problem of learning an optimal decision tree is known to be\nNP-complete under several aspects of optimality and even for simple\nconcepts. Consequently, practical decision-tree learning algorithms\nare based on heuristic algorithms such as the greedy algorithm where"
+        },
+        {
+          "url": "https://scikit-learn.org/1.9/modules/tree.html#tips-on-practical-use",
+          "content": "1.10. Decision Trees\n1.10.5. Tips on practical use\n\nfor each additional level the tree grows to.  Use max_depth to control\nthe size of the tree to prevent overfitting. Use min_samples_split or min_samples_leaf to ensure that multiple\nsamples inform every decision in the tree, by controlling which splits will\nbe considered. A very small number will usually mean the tree will overfit,\nwhereas a large number will prevent the tree from learning the data. Try min_samples_leaf=5 as an initial value. If the sample size varies\ngreatly, a float number can be used as percentage in these two parameters.\nWhile min_samples_split can create arbitrarily small leaves, min_samples_leaf guarantees that each leaf has a minimum size, avoiding\nlow-variance, over-fit leaf nodes in regression problems.  For\nclassification with few classes, min_samples_leaf=1 is often the best"
+        },
+        {
+          "url": "https://scikit-learn.org/1.9/modules/ensemble.html#random-forests",
+          "content": "1.11. Ensembles: Gradient boosting, random forests, bagging, voting, stacking\n1.11.2. Random forests and other randomized tree ensembles\n1.11.2.1. Random Forests\n\nThe purpose of these two sources of randomness (bootstrapping the samples and\nrandomly selecting features at each split) is to decrease the variance of the\nforest estimator. Indeed, individual decision trees typically exhibit high\nvariance and tend to overfit. The injected randomness in forests yield decision\ntrees with somewhat decoupled prediction errors. By taking an average of those\npredictions, some errors can cancel out. Random forests achieve a reduced\nvariance by combining diverse trees, sometimes at the cost of a slight increase\nin bias. In practice the variance reduction is often significant hence yielding\nan overall better model."
+        }
+      ],
+      "expected_refusal": false,
+      "metrics": {
+        "faithfulness": {
+          "value": 1.0,
+          "status": "completed"
+        },
+        "answer_relevancy": {
+          "value": 0.9911637181920285,
+          "status": "completed"
+        }
+      }
+    },
+    {
+      "id": "sh-06",
+      "question": "What is the formula for precision?",
+      "answer": "The formula for precision is [1]:\n\n\\[\n\\text{precision} = \\frac{\\text{tp}}{\\text{tp} + \\text{fp}}\n\\]\n\nwhere **tp** stands for true positives and **fp** stands for false positives [3].",
+      "sources": [
+        {
+          "url": "https://scikit-learn.org/1.9/modules/model_evaluation.html#binary-classification",
+          "content": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.4. Classification metrics\n3.4.4.9. Precision, recall and F-measures\n3.4.4.9.1. Binary classification\n\n\\[\\text{precision} = \\frac{\\text{tp}}{\\text{tp} + \\text{fp}},\\]\n\n\\[\\text{recall} = \\frac{\\text{tp}}{\\text{tp} + \\text{fn}},\\]\n\n(Sometimes recall is also called ‘’sensitivity’’)\n\nF-measure is the weighted harmonic mean of precision and recall, with precision’s\ncontribution to the mean weighted by some parameter \\(\\beta\\) :\n\n\\[F_\\beta = (1 + \\beta^2) \\frac{\\text{precision} \\times \\text{recall}}{\\beta^2 \\text{precision} + \\text{recall}}\\]\n\nTo avoid division by zero when precision and recall are zero, Scikit-Learn calculates F-measure with this\notherwise-equivalent formula:\n\n\\[F_\\beta = \\frac{(1 + \\beta^2) \\text{tp}}{(1 + \\beta^2) \\text{tp} + \\text{fp} + \\beta^2 \\text{fn}}\\]"
+        },
+        {
+          "url": "https://scikit-learn.org/1.9/modules/model_evaluation.html#binary-classification",
+          "content": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.4. Classification metrics\n3.4.4.9. Precision, recall and F-measures\n3.4.4.9.1. Binary classification\n\n```\n>>> from sklearn import metrics\n>>> y_pred = [0, 1, 0, 0]\n>>> y_true = [0, 1, 0, 1]\n>>> metrics.precision_score(y_true, y_pred)\n1.0\n>>> metrics.recall_score(y_true, y_pred)\n0.5\n>>> metrics.f1_score(y_true, y_pred)\n0.66\n>>> metrics.fbeta_score(y_true, y_pred, beta=0.5)\n0.83\n>>> metrics.fbeta_score(y_true, y_pred, beta=1)\n0.66\n>>> metrics.fbeta_score(y_true, y_pred, beta=2)\n0.55\n>>> metrics.precision_recall_fscore_support(y_true, y_pred, beta=0.5)\n(array([0.66, 1.        ]), array([1. , 0.5]), array([0.71, 0.83]), array([2, 2]))\n\n\n>>> import numpy as np\n>>> from sklearn.metrics import precision_recall_curve\n>>> from sklearn.metrics import average_precision_score\n>>> y_true = np.array([0, 0, 1, 1])\n>>> y_scores = np.array([0.1, 0.4, 0.35, 0.8])\n>>> precision, recall, threshold = precision_recall_curve(y_true, y_scores)\n>>> precision\narray([0.5       , 0.66, 0.5       , 1.        , 1.        ])\n>>> recall\narray([1. , 1. , 0.5, 0.5, 0. ])\n>>> threshold\narray([0.1 , 0.35, 0.4 , 0.8 ])\n>>> average_precision_score(y_true, y_scores)\n0.83\n```"
+        },
+        {
+          "url": "https://scikit-learn.org/1.9/modules/model_evaluation.html#binary-classification",
+          "content": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.4. Classification metrics\n3.4.4.9. Precision, recall and F-measures\n3.4.4.9.1. Binary classification\n\nIn a binary classification task, the terms ‘’positive’’ and ‘’negative’’ refer\nto the classifier’s prediction, and the terms ‘’true’’ and ‘’false’’ refer to\nwhether that prediction corresponds to the external judgment (sometimes known\nas the ‘’observation’’). Given these definitions, we can formulate the\nfollowing table:\n\nActual class (observation) Predicted class\n(expectation) tp (true positive)\nCorrect result fp (false positive)\nUnexpected result fn (false negative)\nMissing result tn (true negative)\nCorrect absence of result\n\nIn this context, we can define the notions of precision and recall:\n\n\\[\\text{precision} = \\frac{\\text{tp}}{\\text{tp} + \\text{fp}},\\]\n\n\\[\\text{recall} = \\frac{\\text{tp}}{\\text{tp} + \\text{fn}},\\]\n\n(Sometimes recall is also called ‘’sensitivity’’)"
+        },
+        {
+          "url": "https://scikit-learn.org/1.9/modules/model_evaluation.html#label-ranking-average-precision",
+          "content": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.5. Multilabel ranking metrics\n3.4.5.2. Label ranking average precision\n\nFormally, given a binary indicator matrix of the ground truth labels \\(y \\in \\left\\{0, 1\\right\\}^{n_\\text{samples} \\times n_\\text{labels}}\\) and the score associated with each label \\(\\hat{f} \\in \\mathbb{R}^{n_\\text{samples} \\times n_\\text{labels}}\\) ,\nthe average precision is defined as\n\n\\[LRAP(y, \\hat{f}) = \\frac{1}{n_{\\text{samples}}}\n  \\sum_{i=0}^{n_{\\text{samples}} - 1} \\frac{1}{||y_i||_0}\n  \\sum_{j:y_{ij} = 1} \\frac{|\\mathcal{L}_{ij}|}{\\text{rank}_{ij}}\\]\n\nwhere \\(\\mathcal{L}_{ij} = \\left\\{k: y_{ik} = 1, \\hat{f}_{ik} \\geq \\hat{f}_{ij} \\right\\}\\) , \\(\\text{rank}_{ij} = \\left|\\left\\{k: \\hat{f}_{ik} \\geq \\hat{f}_{ij} \\right\\}\\right|\\) , \\(|\\cdot|\\) computes the cardinality of the set (i.e., the number of\nelements in the set), and \\(||\\cdot||_0\\) is the \\(\\ell_0\\) “norm”\n(which computes the number of nonzero elements in a vector)."
+        }
+      ],
+      "expected_refusal": false,
+      "metrics": {
+        "faithfulness": {
+          "value": 1.0,
+          "status": "completed"
+        },
+        "answer_relevancy": {
+          "value": 0.9444132202470857,
+          "status": "completed"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "in_corpus": {
+      "faithfulness": {
+        "mean": 1.0,
+        "n": 3
+      },
+      "answer_relevancy": {
+        "mean": 0.9679830464987017,
+        "n": 3
+      }
+    },
+    "out_of_corpus": {
+      "faithfulness": {
+        "mean": null,
+        "n": 0
+      },
+      "answer_relevancy": {
+        "mean": null,
+        "n": 0
+      }
+    }
+  },
+  "updated_at_utc": "2026-10-13T15:31:52.442866+00:00",
+  "finished_at_utc": "2026-10-13T15:31:52.442866+00:00"
+}
