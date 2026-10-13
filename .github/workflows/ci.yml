@@ -22,6 +22,7 @@ jobs:
       - name: Run tests
         env:
           LLM_API_KEY: test-key
+          ENABLE_WEB_SEARCH: "false"
         run: pytest -v
 
   build-image:

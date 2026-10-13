@@ -13,9 +13,9 @@ class Settings(BaseSettings):
     # Только секрет — без default, контейнер падает если не задан.
     llm_api_key: str
 
-    # LLM provider. Дефолты для Groq; override через .env при смене провайдера.
-    llm_base_url: str = "https://api.groq.com/openai/v1"
-    llm_model: str = "qwen/qwen3.8-27b"
+    # Match .env.example; another OpenAI-compatible provider can override both.
+    llm_base_url: str = "https://api.neuraldeep.ru/v1"
+    llm_model: str = "qwen3.6-35b-a3b-noreason"
     llm_temperature: float = 0.0
 
     # Vector store

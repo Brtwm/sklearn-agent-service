@@ -1,0 +1,304 @@
+{
+  "created_at": "2026-10-13T16:08:57.742041+00:00",
+  "scope": "local Docker; no VPS deployment",
+  "image_id": "sha256:1b6a45fbb702d75fcf00f7aace2f7f75df676afee5487d4b7922e533aaa50108",
+  "hf_cache": "read-only local cache; model downloads disabled",
+  "base_url": "http://127.0.0.1:8010",
+  "passed": true,
+  "checks": [
+    {
+      "name": "/health",
+      "passed": true,
+      "http_status": 200
+    },
+    {
+      "name": "/ready",
+      "passed": true,
+      "http_status": 200
+    },
+    {
+      "name": "/",
+      "passed": true,
+      "http_status": 200
+    },
+    {
+      "name": "input guardrail",
+      "passed": true,
+      "http_status": 422
+    },
+    {
+      "name": "baseline original context",
+      "passed": true,
+      "response": {
+        "answer": "The formula for precision is [1]:\n\n\\[\n\\text{precision} = \\frac{\\text{tp}}{\\text{tp} + \\text{fp}}\n\\]\n\nwhere **tp** stands for true positives and **fp** stands for false positives [3].",
+        "sources": [
+          {
+            "url": "https://scikit-learn.org/1.9/modules/model_evaluation.html#binary-classification",
+            "snippet": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.4. Classification metrics\n3.4.4.9. Precision, recall and F-measures\n3.4.4.9.1. Binary classification\n\n\\[\\text{precision} = \\frac{\\t",
+            "full_context": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.4. Classification metrics\n3.4.4.9. Precision, recall and F-measures\n3.4.4.9.1. Binary classification\n\n\\[\\text{precision} = \\frac{\\text{tp}}{\\text{tp} + \\text{fp}},\\]\n\n\\[\\text{recall} = \\frac{\\text{tp}}{\\text{tp} + \\text{fn}},\\]\n\n(Sometimes recall is also called ‘’sensitivity’’)\n\nF-measure is the weighted harmonic mean of precision and recall, with precision’s\ncontribution to the mean weighted by some parameter \\(\\beta\\) :\n\n\\[F_\\beta = (1 + \\beta^2) \\frac{\\text{precision} \\times \\text{recall}}{\\beta^2 \\text{precision} + \\text{recall}}\\]\n\nTo avoid division by zero when precision and recall are zero, Scikit-Learn calculates F-measure with this\notherwise-equivalent formula:\n\n\\[F_\\beta = \\frac{(1 + \\beta^2) \\text{tp}}{(1 + \\beta^2) \\text{tp} + \\text{fp} + \\beta^2 \\text{fn}}\\]"
+          },
+          {
+            "url": "https://scikit-learn.org/1.9/modules/model_evaluation.html#binary-classification",
+            "snippet": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.4. Classification metrics\n3.4.4.9. Precision, recall and F-measures\n3.4.4.9.1. Binary classification\n\n```\n>>> from sklearn import m",
+            "full_context": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.4. Classification metrics\n3.4.4.9. Precision, recall and F-measures\n3.4.4.9.1. Binary classification\n\n```\n>>> from sklearn import metrics\n>>> y_pred = [0, 1, 0, 0]\n>>> y_true = [0, 1, 0, 1]\n>>> metrics.precision_score(y_true, y_pred)\n1.0\n>>> metrics.recall_score(y_true, y_pred)\n0.5\n>>> metrics.f1_score(y_true, y_pred)\n0.66\n>>> metrics.fbeta_score(y_true, y_pred, beta=0.5)\n0.83\n>>> metrics.fbeta_score(y_true, y_pred, beta=1)\n0.66\n>>> metrics.fbeta_score(y_true, y_pred, beta=2)\n0.55\n>>> metrics.precision_recall_fscore_support(y_true, y_pred, beta=0.5)\n(array([0.66, 1.        ]), array([1. , 0.5]), array([0.71, 0.83]), array([2, 2]))\n\n\n>>> import numpy as np\n>>> from sklearn.metrics import precision_recall_curve\n>>> from sklearn.metrics import average_precision_score\n>>> y_true = np.array([0, 0, 1, 1])\n>>> y_scores = np.array([0.1, 0.4, 0.35, 0.8])\n>>> precision, recall, threshold = precision_recall_curve(y_true, y_scores)\n>>> precision\narray([0.5       , 0.66, 0.5       , 1.        , 1.        ])\n>>> recall\narray([1. , 1. , 0.5, 0.5, 0. ])\n>>> threshold\narray([0.1 , 0.35, 0.4 , 0.8 ])\n>>> average_precision_score(y_true, y_scores)\n0.83\n```"
+          },
+          {
+            "url": "https://scikit-learn.org/1.9/modules/model_evaluation.html#binary-classification",
+            "snippet": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.4. Classification metrics\n3.4.4.9. Precision, recall and F-measures\n3.4.4.9.1. Binary classification\n\nIn a binary classification ta",
+            "full_context": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.4. Classification metrics\n3.4.4.9. Precision, recall and F-measures\n3.4.4.9.1. Binary classification\n\nIn a binary classification task, the terms ‘’positive’’ and ‘’negative’’ refer\nto the classifier’s prediction, and the terms ‘’true’’ and ‘’false’’ refer to\nwhether that prediction corresponds to the external judgment (sometimes known\nas the ‘’observation’’). Given these definitions, we can formulate the\nfollowing table:\n\nActual class (observation) Predicted class\n(expectation) tp (true positive)\nCorrect result fp (false positive)\nUnexpected result fn (false negative)\nMissing result tn (true negative)\nCorrect absence of result\n\nIn this context, we can define the notions of precision and recall:\n\n\\[\\text{precision} = \\frac{\\text{tp}}{\\text{tp} + \\text{fp}},\\]\n\n\\[\\text{recall} = \\frac{\\text{tp}}{\\text{tp} + \\text{fn}},\\]\n\n(Sometimes recall is also called ‘’sensitivity’’)"
+          },
+          {
+            "url": "https://scikit-learn.org/1.9/modules/model_evaluation.html#label-ranking-average-precision",
+            "snippet": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.5. Multilabel ranking metrics\n3.4.5.2. Label ranking average precision\n\nFormally, given a binary indicator matrix of the ground tru",
+            "full_context": "3.4. Metrics and scoring: quantifying the quality of predictions\n3.4.5. Multilabel ranking metrics\n3.4.5.2. Label ranking average precision\n\nFormally, given a binary indicator matrix of the ground truth labels \\(y \\in \\left\\{0, 1\\right\\}^{n_\\text{samples} \\times n_\\text{labels}}\\) and the score associated with each label \\(\\hat{f} \\in \\mathbb{R}^{n_\\text{samples} \\times n_\\text{labels}}\\) ,\nthe average precision is defined as\n\n\\[LRAP(y, \\hat{f}) = \\frac{1}{n_{\\text{samples}}}\n  \\sum_{i=0}^{n_{\\text{samples}} - 1} \\frac{1}{||y_i||_0}\n  \\sum_{j:y_{ij} = 1} \\frac{|\\mathcal{L}_{ij}|}{\\text{rank}_{ij}}\\]\n\nwhere \\(\\mathcal{L}_{ij} = \\left\\{k: y_{ik} = 1, \\hat{f}_{ik} \\geq \\hat{f}_{ij} \\right\\}\\) , \\(\\text{rank}_{ij} = \\left|\\left\\{k: \\hat{f}_{ik} \\geq \\hat{f}_{ij} \\right\\}\\right|\\) , \\(|\\cdot|\\) computes the cardinality of the set (i.e., the number of\nelements in the set), and \\(||\\cdot||_0\\) is the \\(\\ell_0\\) “norm”\n(which computes the number of nonzero elements in a vector)."
+          }
+        ]
+      }
+    },
+    {
+      "name": "agent Python arithmetic",
+      "passed": true,
+      "response": {
+        "answer": "The result of 7 * 6 is **42**.",
+        "trace": [
+          {
+            "step": 1,
+            "node": "agent",
+            "tool": "python_repl",
+            "input": {
+              "code": "print(7 * 6)"
+            },
+            "output": "42\n",
+            "latency_ms": 5
+          }
+        ],
+        "sources": [],
+        "guardrail_triggered": null,
+        "iterations": 2,
+        "thread_id": "local-final-b00819271f084c549832e7b15bd845fa",
+        "total_ms": 1481,
+        "termination_reason": null
+      }
+    },
+    {
+      "name": "agent thread memory",
+      "passed": true,
+      "response": {
+        "answer": "The result of the previous calculation (7 * 6) was **42**.",
+        "trace": [],
+        "sources": [],
+        "guardrail_triggered": null,
+        "iterations": 1,
+        "thread_id": "local-final-b00819271f084c549832e7b15bd845fa",
+        "total_ms": 7737,
+        "termination_reason": null
+      }
+    },
+    {
+      "name": "agent multi-hop",
+      "passed": true,
+      "response": {
+        "answer": "**Answer:** The L2 penalty is **7.0**.\n\n**Breakdown:**\n- $||w||_2^2 = 1^2 + 2^2 + 3^2 = 1 + 4 + 9 = 14$\n- Penalty = $\\alpha \\times ||w||_2^2 = 0.5 \\times 14 = 7.0$\n\nThis penalty term is added to the residual sum of squares in Ridge's objective function, encouraging smaller coefficient values and helping to prevent overfitting.",
+        "trace": [
+          {
+            "step": 1,
+            "node": "agent",
+            "tool": "documentation_search",
+            "input": {
+              "query": "Ridge L2 penalty formula alpha"
+            },
+            "output": "The Ridge regression penalty involves an L2 regularization term controlled by the complexity parameter $\\alpha \\geq 0$. The objective function that Ridge regression minimizes is a penalized residual sum of squares, defined as [1]:\n\n\\[\n\\min_{w} || X w - y||_2^2 + \\alpha ||w||_2^2\n\\]\n\nIn this formula, $\\alpha$ controls the amount of shrinkage: the larger the value of $\\alpha$, the greater the shrinkage, making the coefficients more robust to collinearity [1].\n\nAdditionally, in the context of Gener",
+            "latency_ms": 9981
+          },
+          {
+            "step": 2,
+            "node": "agent",
+            "tool": "python_repl",
+            "input": {
+              "code": "import numpy as np\n\nalpha = 0.5\nw = np.array([1, 2, 3])\n\n# L2 penalty = alpha * ||w||_2^2\nl2_norm_squared = np.sum(w**2)\npenalty = alpha * l2_norm_squared\n\nprint(f\"w = {w}\")\nprint(f\"||w||_2^2 = sum(w^2) = {l2_norm_squared}\")\nprint(f\"alpha = {alpha}\")\nprint(f\"L2 penalty = alpha * ||w||_2^2 = {penalty}\")"
+            },
+            "output": "w = [1 2 3]\n||w||_2^2 = sum(w^2) = 14\nalpha = 0.5\nL2 penalty = alpha * ||w||_2^2 = 7.0\n",
+            "latency_ms": 3
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://scikit-learn.org/1.9/modules/linear_model.html#regression",
+            "snippet": "1.1. Linear Models\n1.1.2. Ridge regression and classification\n1.1.2.1. Regression\n\nRidge regression addresses some of the problems of Ordinary Least Squares by imposing a penalty on the size of the\nco",
+            "full_context": "1.1. Linear Models\n1.1.2. Ridge regression and classification\n1.1.2.1. Regression\n\nRidge regression addresses some of the problems of Ordinary Least Squares by imposing a penalty on the size of the\ncoefficients. The ridge coefficients minimize a penalized residual sum\nof squares:\n\n\\[\\min_{w} || X w - y||_2^2 + \\alpha ||w||_2^2\\]\n\nThe complexity parameter \\(\\alpha \\geq 0\\) controls the amount\nof shrinkage: the larger the value of \\(\\alpha\\) , the greater the amount\nof shrinkage and thus the coefficients become more robust to collinearity.\n\nAs with other linear models, Ridge will take in its fit method\narrays X , y and will store the coefficients \\(w\\) of the linear model in\nits coef_ member:\n\n```\n>>> from sklearn import linear_model\n>>> reg = linear_model.Ridge(alpha=.5)\n>>> reg.fit([[0, 0], [0, 0], [1, 1]], [0, .1, 1])\nRidge(alpha=0.5)\n>>> reg.coef_\narray([0.34545455, 0.34545455])\n>>> reg.intercept_\nnp.float64(0.13636)\n```"
+          },
+          {
+            "url": "https://scikit-learn.org/1.9/modules/linear_model.html#generalized-linear-models",
+            "snippet": "1.1. Linear Models\n1.1.12. Generalized Linear Models\n\nwhere \\(\\alpha\\) is the L2 regularization penalty. When sample weights are\nprovided, the average becomes a weighted average.\n\nThe following table",
+            "full_context": "1.1. Linear Models\n1.1.12. Generalized Linear Models\n\nwhere \\(\\alpha\\) is the L2 regularization penalty. When sample weights are\nprovided, the average becomes a weighted average.\n\nThe following table lists some specific EDMs and their unit deviance :\n\nDistribution Target Domain Unit Deviance \\(d(y, \\hat{y})\\) Normal \\(y \\in (-\\infty, \\infty)\\) \\((y-\\hat{y})^2\\) Bernoulli \\(y \\in \\{0, 1\\}\\) \\(2({y}\\log\\frac{y}{\\hat{y}}+({1}-{y})\\log\\frac{{1}-{y}}{{1}-\\hat{y}})\\) Categorical \\(y \\in \\{0, 1, ..., k\\}\\) \\(2\\sum_{i \\in \\{0, 1, ..., k\\}} I(y = i) y_\\text{i}\\log\\frac{I(y = i)}{\\hat{I(y = i)}}\\) Poisson \\(y \\in [0, \\infty)\\) \\(2(y\\log\\frac{y}{\\hat{y}}-y+\\hat{y})\\) Gamma \\(y \\in (0, \\infty)\\) \\(2(\\log\\frac{\\hat{y}}{y}+\\frac{y}{\\hat{y}}-1)\\) Inverse Gaussian \\(y \\in (0, \\infty)\\) \\(\\frac{(y-\\hat{y})^2}{y\\hat{y}^2}\\)\n\nThe Probability Density Functions (PDF) of these distributions are illustrated\nin the following figure,"
+          },
+          {
+            "url": "https://scikit-learn.org/1.9/modules/linear_model.html#setting-the-regularization-parameter-leave-one-out-cross-validation",
+            "snippet": "1.1. Linear Models\n1.1.2. Ridge regression and classification\n1.1.2.4. Setting the regularization parameter: leave-one-out Cross-Validation\n\nRidgeCV and RidgeClassifierCV implement ridge\nregression/cl",
+            "full_context": "1.1. Linear Models\n1.1.2. Ridge regression and classification\n1.1.2.4. Setting the regularization parameter: leave-one-out Cross-Validation\n\nRidgeCV and RidgeClassifierCV implement ridge\nregression/classification with built-in cross-validation of the alpha parameter.\nThey work in the same way as GridSearchCV except\nthat it defaults to efficient Leave-One-Out cross-validation .\nWhen using the default cross-validation , alpha cannot be 0 due to the\nformulation used to calculate Leave-One-Out error. See [RL2007] for details.\n\nUsage example:\n\n```\n>>> import numpy as np\n>>> from sklearn import linear_model\n>>> reg = linear_model.RidgeCV(alphas=np.logspace(-6, 6, 13))\n>>> reg.fit([[0, 0], [0, 0.1], [1, 1]], [0, -0.1, 1])\nRidgeCV(alphas=array([1.e-06, 1.e-05, 1.e-04, 1.e-03, 1.e-02, 1.e-01, 1.e+00, 1.e+01,\n      1.e+02, 1.e+03, 1.e+04, 1.e+05, 1.e+06]))\n>>> reg.alpha_\nnp.float64(0.1)\n```"
+          },
+          {
+            "url": "https://scikit-learn.org/1.9/modules/linear_model.html#generalized-linear-models",
+            "snippet": "1.1. Linear Models\n1.1.12. Generalized Linear Models\n\nGeneralized Linear Models (GLM) extend linear models in two ways [ 10 ] . First, the predicted values \\(\\hat{y}\\) are linked to a linear\ncombinati",
+            "full_context": "1.1. Linear Models\n1.1.12. Generalized Linear Models\n\nGeneralized Linear Models (GLM) extend linear models in two ways [ 10 ] . First, the predicted values \\(\\hat{y}\\) are linked to a linear\ncombination of the input variables \\(X\\) via an inverse link function \\(h\\) as\n\n\\[\\hat{y}(w, X) = h(Xw).\\]\n\nSecondly, the squared loss function is replaced by the unit deviance \\(d\\) of a distribution in the exponential family (or more precisely, a\nreproductive exponential dispersion model (EDM) [ 11 ] ).\n\nThe minimization problem becomes:\n\n\\[\\min_{w} \\frac{1}{2 n_{\\text{samples}}} \\sum_i d(y_i, \\hat{y}_i) + \\frac{\\alpha}{2} ||w||_2^2,\\]\n\nwhere \\(\\alpha\\) is the L2 regularization penalty. When sample weights are\nprovided, the average becomes a weighted average.\n\nThe following table lists some specific EDMs and their unit deviance :"
+          }
+        ],
+        "guardrail_triggered": null,
+        "iterations": 3,
+        "thread_id": "3b6d5101-e4d7-4ac9-889d-fa36a2c796ba",
+        "total_ms": 55379,
+        "termination_reason": null
+      }
+    },
+    {
+      "name": "Gradio agent streaming and restored controls",
+      "passed": true,
+      "answer": "The result of 3 * 13 is **39**.",
+      "trace": "**1. python\\_repl** · 2 мс\n\n**Параметры:** {\"code\": \"print(3 \\* 13)\"}\n\n**Результат:**\n\n> 39",
+      "status": "✅ Готово за 4.8 сек · 1 запросов к инструментам · 2 итераций",
+      "stream_events": 19,
+      "controls_restored": true
+    },
+    {
+      "name": "CLI runner and JSON agent logs",
+      "passed": true,
+      "exit_code": 0,
+      "question": "Compute 6 * 8 with python_repl.",
+      "stdout": "{\"iteration\": 1, \"latency_ms\": 7895, \"tool_calls_count\": 1, \"tools_requested\": [\"python_repl\"], \"termination_reason\": null, \"event\": \"agent_node_completed\", \"level\": \"info\", \"timestamp\": \"2026-10-13T16:20:19.801537Z\"}\n{\"iteration\": 2, \"latency_ms\": 2382, \"tool_calls_count\": 0, \"tools_requested\": [], \"termination_reason\": null, \"event\": \"agent_node_completed\", \"level\": \"info\", \"timestamp\": \"2026-10-13T16:20:22.191090Z\"}\n\nОтвет:\n6 * 8 = 48\n\nИтераций: 2\nОбщее время: 10295 мс\nИнструменты: python_repl\n",
+      "events": [
+        {
+          "iteration": 1,
+          "latency_ms": 7895,
+          "tool_calls_count": 1,
+          "tools_requested": [
+            "python_repl"
+          ],
+          "termination_reason": null,
+          "event": "agent_node_completed",
+          "level": "info",
+          "timestamp": "2026-10-13T16:20:19.801537Z"
+        },
+        {
+          "iteration": 2,
+          "latency_ms": 2382,
+          "tool_calls_count": 0,
+          "tools_requested": [],
+          "termination_reason": null,
+          "event": "agent_node_completed",
+          "level": "info",
+          "timestamp": "2026-10-13T16:20:22.191090Z"
+        }
+      ]
+    },
+    {
+      "name": "Updated provider-free smoke worker REST and Gradio queue",
+      "passed": true,
+      "external_llm_calls": 0,
+      "corpus_origin": "read-only snapshot of existing Qdrant collection in temporary directory",
+      "rest": [
+        {
+          "id": "local-en",
+          "language": "en",
+          "repeat": 1,
+          "success": true,
+          "status_code": 200,
+          "chunk_ids": [
+            "6ff3cb0b-56bf-513d-b2d1-cf791b21b875",
+            "e1716a48-9535-55e2-93e9-4184053a9a2b",
+            "49045ae4-8f27-51e4-924d-860160ad96eb",
+            "2301600f-7c50-5984-b6ac-58f5d1343403"
+          ],
+          "latency_ms": 1851.6132000368088
+        },
+        {
+          "id": "local-en-2",
+          "language": "en",
+          "repeat": 1,
+          "success": true,
+          "status_code": 200,
+          "chunk_ids": [
+            "1325d15a-23ae-5761-9fc5-3bcfb2b84dde",
+            "5fc7a7cb-4a6c-5f5e-a58d-fc4e3f42add2",
+            "337d616b-19aa-52ec-bde1-3e514f59152a",
+            "e342f967-b7a2-519e-9980-122426b71f03"
+          ],
+          "latency_ms": 1132.9769999720156
+        }
+      ],
+      "ui": {
+        "sessions": 2,
+        "requests": [
+          {
+            "id": "local-en",
+            "success": true,
+            "chunk_ids": [
+              "6ff3cb0b-56bf-513d-b2d1-cf791b21b875",
+              "e1716a48-9535-55e2-93e9-4184053a9a2b",
+              "49045ae4-8f27-51e4-924d-860160ad96eb",
+              "2301600f-7c50-5984-b6ac-58f5d1343403"
+            ]
+          },
+          {
+            "id": "local-en-2",
+            "success": true,
+            "chunk_ids": [
+              "1325d15a-23ae-5761-9fc5-3bcfb2b84dde",
+              "5fc7a7cb-4a6c-5f5e-a58d-fc4e3f42add2",
+              "337d616b-19aa-52ec-bde1-3e514f59152a",
+              "e342f967-b7a2-519e-9980-122426b71f03"
+            ]
+          }
+        ],
+        "passed": true
+      },
+      "queue_observations": {
+        "active": 0,
+        "peak_active": 1,
+        "started": 2,
+        "finished": 2
+      }
+    }
+  ],
+  "verification_notes": [
+    "Initial multi-hop assertion expected only 7 or 7.0 as tool stdout; actual Python stdout includes the correct labeled result. Checked the calculation, order of tools and original sources.",
+    "Initial Gradio probe read the final skip update as chat history. Corrected the probe to read the last streamed chat event; no application change required.",
+    "Gradio probe retained component updates with _skip_components=False and supplied the State input explicitly; default client skips non-data components.",
+    "Trace panel escapes underscores for Markdown; asserted the visible tool name after unescaping rather than a raw substring."
+  ],
+  "finished_at": "2026-10-13T16:23:14.826017+00:00",
+  "source_sha256": {
+    "app\\config.py": "a27f096698f694809ad4cd730f52c8041616dfa7dc66958a3cbdf30f11ddccb9",
+    "app\\main.py": "4cdfe6845a0d6a2c8b9bf9cf2d8a1e79a0692d32f752d4623c0e83a1d4fce436",
+    "app\\agent\\graph.py": "028590b29da4c7ae9457f34762641543b76028e1594fbbb58bf73a57978063ad",
+    "app/scripts/smoke_service.py": "b11e7246affa77ab951b233dda403d8440b97e010fd2e06c6c00493d75ac623f"
+  },
+  "verification": {
+    "conda": {
+      "environment": "sklearn-agent",
+      "command": "ENABLE_WEB_SEARCH=false python -m pytest -q -rs",
+      "passed": 272,
+      "skipped": 1,
+      "duration_s": 32.95
+    },
+    "docker": {
+      "image": "sklearn-agent-local-check:step9",
+      "image_id": "sha256:75f0815b6fb10fc27ffe0238b13137fba604de43186862bce38f644e19da3d30",
+      "command": "ENABLE_WEB_SEARCH=false python -m pytest tests/ -q -rs",
+      "passed": 272,
+      "skipped": 1,
+      "warnings": 2,
+      "duration_s": 14.1
+    },
+    "skip_reason": "Generated data/corpus_chunks.jsonl is unavailable; existing Qdrant index was checked separately without reindexing.",
+    "dependency_check": "pip check passed in conda and Docker",
+    "configuration_checks": [
+      "Workflow YAML parsed; test stages disable web search",
+      "Deploy has only workflow_dispatch",
+      "SSH script sh -n passed; not executed",
+      "docker compose config --quiet passed",
+      "git diff --check passed"
+    ],
+    "deployment": "No VPS connection, registry push or workflow dispatch",
+    "cleanup": "Temporary smoke server and sklearn-agent-step9-check removed; existing Qdrant preserved"
+  }
+}
